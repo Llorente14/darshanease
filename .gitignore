@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# AI agent files
+.agent/skills/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
