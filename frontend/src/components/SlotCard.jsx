@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
   formatPrice,
   formatSeatsLeft,
@@ -70,7 +71,13 @@ export default function SlotCard({ slot, footer }) {
         <small>{month}</small>
       </div>
       <div className="slot-main">
-        <div className="temple-link">{slot.temple.templeName}</div>
+        <Link
+          className="temple-link"
+          to={`/temples/${slot.temple._id}`}
+          style={{ display: "block", width: "fit-content", textDecoration: "none" }}
+        >
+          {slot.temple.templeName}
+        </Link>
         <p>
           <MapPinIcon />
           {slot.temple.location}
