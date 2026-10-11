@@ -13,6 +13,11 @@ const bookingSchema = new mongoose.Schema(
     },
     totalAmount: { type: Number, required: true, min: 0, validate: Number.isInteger }, // IDR, computed on server
     bookingDate: { type: Date, default: Date.now },
+    status: {
+      type: String,
+      enum: ["pending", "confirmed", "cancelled", "failed"],
+      default: "confirmed",
+    },
   },
   { timestamps: true }
 );
