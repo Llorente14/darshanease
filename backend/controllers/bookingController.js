@@ -5,6 +5,7 @@ const {
   toBookingDTO,
 } = require("../services/bookingService");
 const { generateTicketQR } = require("../services/ticketService");
+const { sendBookingConfirmation } = require("../services/emailService");
 
 const createBookingHandler = asyncHandler(async (req, res) => {
   const { slotId, numberOfDevotees } = req.body;
@@ -13,11 +14,17 @@ const createBookingHandler = asyncHandler(async (req, res) => {
     slotId,
     numberOfDevotees,
   });
+  const dto = toBookingDTO(booking);
   res.status(201).json({
     success: true,
     message: "Booking created",
-    data: { booking: toBookingDTO(booking) },
+    data: { booking: dto },
   });
+
+  // Fire-and-forget: the booking already succeeded. A mail failure is logged, never returned.
+  sendBookingConfirmation({ booking: dto, user: req.user }).catch((err) =>
+    console.error("Booking confirmation email failed:", err.message)
+  );
 });
 
 const getBookingHandler = asyncHandler(async (req, res) => {
