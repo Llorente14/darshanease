@@ -41,8 +41,6 @@ app.use("/api/auth", require("./routes/authRoutes"));
 
 app.use("/api/temples", require("./routes/templeRoutes"));
 
-app.use("/api/slots", require("./routes/slotRoutes"));
-
 // Health check
 app.get("/api/health", (req, res) => {
   res.status(200).json({ success: true, message: "DarshanEase API is running" });
