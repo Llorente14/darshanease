@@ -1,7 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { AuthContext } from "./useAuth";
 import { register as registerService } from "../services/authService";
-
-const AuthContext = createContext(null);
 
 const USER_KEY = "darshanease_user";
 const TOKEN_KEY = "darshanease_token";
@@ -31,6 +30,24 @@ const removeStorage = (key) => {
   }
 };
 
+const readSession = () => {
+  const rawToken = readStorage(TOKEN_KEY);
+  const rawUser = readStorage(USER_KEY);
+  if (rawToken && rawUser) {
+    try {
+      const user = JSON.parse(rawUser);
+      if (user && typeof user === "object") {
+        return { user, token: rawToken };
+      }
+    } catch {
+      /* corrupted payload — drop it below */
+    }
+    removeStorage(USER_KEY);
+    removeStorage(TOKEN_KEY);
+  }
+  return { user: null, token: null };
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
@@ -38,18 +55,18 @@ export function AuthProvider({ children }) {
 
   // On mount, restore the persisted session (loading=true until done)
   useEffect(() => {
-    const storedToken = readStorage(TOKEN_KEY);
-    const storedUser = readStorage(USER_KEY);
-    if (storedToken && storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-        setToken(storedToken);
-      } catch {
-        removeStorage(USER_KEY);
-        removeStorage(TOKEN_KEY);
-      }
-    }
-    setLoading(false);
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      const session = readSession();
+      if (cancelled) return;
+      setUser(session.user);
+      setToken(session.token);
+      setLoading(false);
+    }, 0);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   // Register: calls the API, persists the session, rethrows failures
@@ -72,12 +89,4 @@ export function AuthProvider({ children }) {
 
   const value = { user, token, loading, register, logout };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
 }
