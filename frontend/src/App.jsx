@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import Slots from "./pages/Slots";
 import BookSlot from "./pages/BookSlot";
 import BookingConfirmation from "./pages/BookingConfirmation";
+import MyBookings from "./pages/MyBookings";
 import ProtectedRoute, { SessionLoader } from "./components/ProtectedRoute";
 
 // "/" -> /dashboard when authenticated, otherwise /login
@@ -48,6 +49,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/book/:slotId" element={<BookSlot />} />
+        <Route path="/bookings" element={<MyBookings />} />
         <Route path="/bookings/:bookingId" element={<BookingConfirmation />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
