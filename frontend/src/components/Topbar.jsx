@@ -63,6 +63,9 @@ export default function Topbar() {
       <Link to="/" className="logo-button" aria-label="DarshanEase home">
         <Logo />
       </Link>
+      <Link className="topbar-link" to="/slots">
+        Darshan Slots
+      </Link>
       <div className="top-search">
         <svg
           width="18"

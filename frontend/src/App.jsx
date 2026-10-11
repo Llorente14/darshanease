@@ -3,6 +3,7 @@ import { useAuth } from "./context/useAuth";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import Slots from "./pages/Slots";
 import ProtectedRoute, { SessionLoader } from "./components/ProtectedRoute";
 
 // "/" -> /dashboard when authenticated, otherwise /login
@@ -36,6 +37,7 @@ function App() {
       <Route path="/" element={<IndexRedirect />} />
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/register" element={<RegisterRoute />} />
+      <Route path="/slots" element={<Slots />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
       </Route>
