@@ -38,3 +38,23 @@ const registerValidator = [
 ];
 
 module.exports = { registerValidator };
+
+// ─── Login validator ────────────────────────────────────────────────────────
+// Only checks that the fields are present and well-formed.
+// No password-strength rules here — those are only on register.
+const loginValidator = [
+  body("email")
+    .exists({ checkFalsy: true }).withMessage("Email is required")
+    .bail()
+    .trim()
+    .isEmail().withMessage("Email must be a valid email address")
+    .bail()
+    .normalizeEmail(),
+
+  body("password")
+    .exists({ checkFalsy: true }).withMessage("Password is required")
+    .bail()
+    .notEmpty().withMessage("Password must not be empty"),
+];
+
+module.exports = { registerValidator, loginValidator };
