@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getSlots, getTemples } from "../services/slotService";
 import Button from "../components/Button";
 import Footer from "../components/Footer";
@@ -92,6 +92,7 @@ function SlotCardSkeleton() {
 
 export default function Slots() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const rawTempleId = searchParams.get("templeId") ?? "";
   const rawDate = searchParams.get("date") ?? "";
   const templeId = ID_PATTERN.test(rawTempleId) ? rawTempleId : "";
@@ -191,7 +192,15 @@ export default function Slots() {
     content = (
       <div className="slot-list slot-grid">
         {slots.map((slot) => (
-          <SlotCard key={slot._id} slot={slot} />
+          <SlotCard
+            key={slot._id}
+            slot={slot}
+            footer={
+              slot.status === "available" ? (
+                <Button onClick={() => navigate(`/book/${slot._id}`)}>Book now</Button>
+              ) : undefined
+            }
+          />
         ))}
       </div>
     );
