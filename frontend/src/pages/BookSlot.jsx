@@ -45,24 +45,6 @@ function ArrowLeftIcon() {
   );
 }
 
-function CheckIcon() {
-  return (
-    <svg
-      width="27"
-      height="27"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  );
-}
-
 function SpinnerIcon() {
   return (
     <svg
@@ -87,7 +69,6 @@ export default function BookSlot() {
   const [devotees, setDevotees] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [booking, setBooking] = useState(null);
 
   // Same pattern as Slots: a response only counts when its key matches the current request
   const [request, setRequest] = useState({ key: null, slot: null, failure: null });
@@ -126,7 +107,7 @@ export default function BookSlot() {
     setSubmitError("");
     try {
       const result = await createBooking({ slotId, numberOfDevotees: count });
-      setBooking(result.data.booking);
+      navigate(`/bookings/${result.data.booking._id}`, { replace: true });
     } catch (err) {
       // 409 not enough seats, 400 slot ended, etc. The form stays usable.
       setSubmitError(err.response?.data?.message || "Booking failed. Please try again.");
@@ -134,31 +115,6 @@ export default function BookSlot() {
       setSubmitting(false);
     }
   };
-
-  // Booking confirmation is USN-6 (e-ticket). Here we only show the result.
-  if (booking) {
-    return (
-      <div className="public-shell">
-        <Topbar />
-        <main className="slots-main">
-          <div className="state-card">
-            <span className="state-icon">
-              <CheckIcon />
-            </span>
-            <h2>Booking confirmed</h2>
-            <p>Booking ID: {booking._id}</p>
-            <p>
-              {booking.numberOfDevotees} devotee(s) · Total {formatPrice(booking.totalAmount)}
-            </p>
-            <Button variant="secondary" onClick={() => navigate("/slots")}>
-              Back to slots
-            </Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
 
   const count = slot ? clampDevotees(devotees, slot.availableSeats) : devotees;
   const max = slot ? Math.min(MAX_DEVOTEES, slot.availableSeats) : MAX_DEVOTEES;
