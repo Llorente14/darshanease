@@ -30,6 +30,17 @@ const templeSchema = new mongoose.Schema(
       type: [{ type: String, trim: true, maxlength: 60 }],
       default: [],
     },
+    // WGS84 decimal degrees. Optional. Set through the seed now, through the organizer form later (USN-14).
+    latitude: {
+      type: Number,
+      min: [-90, "latitude must be between -90 and 90"],
+      max: [90, "latitude must be between -90 and 90"],
+    },
+    longitude: {
+      type: Number,
+      min: [-180, "longitude must be between -180 and 180"],
+      max: [180, "longitude must be between -180 and 180"],
+    },
   },
   { timestamps: true }
 );
@@ -37,6 +48,13 @@ const templeSchema = new mongoose.Schema(
 templeSchema.pre("validate", function () {
   if (this.darshanStartTime && this.darshanEndTime && this.darshanEndTime <= this.darshanStartTime) {
     this.invalidate("darshanEndTime", "darshanEndTime must be later than darshanStartTime");
+  }
+
+  // Latitude and longitude are only meaningful as a pair
+  const hasLat = this.latitude != null;
+  const hasLng = this.longitude != null;
+  if (hasLat !== hasLng) {
+    this.invalidate(hasLat ? "longitude" : "latitude", "latitude and longitude must be set together");
   }
 });
 
