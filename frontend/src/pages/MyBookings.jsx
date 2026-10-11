@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getMyBookings } from "../services/bookingService";
+import { cancelBooking, getMyBookings, modifyBooking } from "../services/bookingService";
 import Button from "../components/Button";
 import Footer from "../components/Footer";
 import Topbar from "../components/Topbar";
@@ -14,8 +14,21 @@ const STATUS_BADGE = {
   failed: { label: "Failed", tone: "status-danger" },
 };
 
+const MAX_DEVOTEES = 10;
+
 const statusBadge = (status) =>
   STATUS_BADGE[status] ?? { label: String(status ?? "Unknown"), tone: "status-neutral" };
+
+// One line for the dialogs: temple · code · date · time
+const bookingDetail = (booking) => {
+  const parts = formatSlotDateParts(booking.slot.date);
+  return [
+    booking.slot.temple.templeName,
+    booking.bookingCode,
+    `${parts.weekday}, ${parts.day} ${parts.month}`,
+    formatTimeRange(booking.slot.startTime, booking.slot.endTime),
+  ].join(" · ");
+};
 
 function SpinnerIcon() {
   return (
@@ -91,6 +104,13 @@ export default function MyBookings() {
   const [tab, setTab] = useState("upcoming");
   const [retryCount, setRetryCount] = useState(0);
 
+  // Dialog state: { type: "cancel" | "modify", booking } or null
+  const [dialog, setDialog] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [dialogError, setDialogError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [count, setCount] = useState(1);
+
   // Same pattern as the other pages: a response only counts when its key matches the current request
   const [request, setRequest] = useState({ key: null, data: null, failed: false });
   const requestKey = String(retryCount);
@@ -112,6 +132,65 @@ export default function MyBookings() {
     return () => controller.abort();
   }, [requestKey]);
 
+  // Escape closes the dialog, except while a request is in flight
+  useEffect(() => {
+    if (!dialog) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape" && !submitting) {
+        setDialog(null);
+        setDialogError("");
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [dialog, submitting]);
+
+  const openDialog = (next) => {
+    setNotice("");
+    setDialogError("");
+    if (next.type === "modify") setCount(next.booking.numberOfDevotees);
+    setDialog(next);
+  };
+
+  const closeDialog = () => {
+    if (submitting) return;
+    setDialog(null);
+    setDialogError("");
+  };
+
+  // On success the list is refetched, so the booking moves to Past on its own (server decides)
+  const finishAction = (message) => {
+    setDialog(null);
+    setNotice(message);
+    setRetryCount((c) => c + 1);
+  };
+
+  const confirmCancel = async () => {
+    setSubmitting(true);
+    setDialogError("");
+    try {
+      await cancelBooking(dialog.booking._id);
+      finishAction("Booking cancelled.");
+    } catch (err) {
+      setDialogError(err.response?.data?.message || "Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const confirmModify = async () => {
+    setSubmitting(true);
+    setDialogError("");
+    try {
+      await modifyBooking(dialog.booking._id, count);
+      finishAction("Booking updated.");
+    } catch (err) {
+      setDialogError(err.response?.data?.message || "Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const list = tab === "upcoming" ? upcoming : past;
 
   let body;
@@ -130,7 +209,7 @@ export default function MyBookings() {
       <div className="state-card">
         <h2>We could not load your bookings</h2>
         <p>Please check your connection and try again.</p>
-        <Button onClick={() => setRetryCount((count) => count + 1)}>Try again</Button>
+        <Button onClick={() => setRetryCount((c) => c + 1)}>Try again</Button>
       </div>
     );
   } else if (list.length === 0) {
@@ -156,6 +235,8 @@ export default function MyBookings() {
             booking={booking}
             muted={tab === "past"}
             onView={() => navigate(`/bookings/${booking._id}`)}
+            onCancel={() => openDialog({ type: "cancel", booking })}
+            onModify={() => openDialog({ type: "modify", booking })}
           />
         ))}
       </div>
@@ -172,6 +253,11 @@ export default function MyBookings() {
             <h1>Booking history</h1>
           </div>
         </div>
+        {notice && (
+          <div className="privacy-note" role="status">
+            {notice}
+          </div>
+        )}
         {!loading && !failed && (
           <div className="booking-tabs" role="tablist">
             <button
@@ -197,6 +283,91 @@ export default function MyBookings() {
         {body}
       </main>
       <Footer />
+
+      {dialog && (
+        <div className="modal-backdrop" onClick={closeDialog}>
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dialog-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              className="modal-close"
+              type="button"
+              aria-label="Close"
+              onClick={closeDialog}
+              disabled={submitting}
+            >
+              ×
+            </button>
+            {dialog.type === "cancel" ? (
+              <>
+                <h2 id="dialog-title">Cancel this booking?</h2>
+                <p>{bookingDetail(dialog.booking)}</p>
+                <div className="modal-note">Your seats will be released immediately.</div>
+                {dialogError && (
+                  <p className="field-error" role="alert">
+                    {dialogError}
+                  </p>
+                )}
+                <div className="modal-actions">
+                  <Button variant="secondary" onClick={closeDialog} disabled={submitting}>
+                    Keep booking
+                  </Button>
+                  <Button variant="danger" loading={submitting} onClick={confirmCancel}>
+                    Yes, cancel booking
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 id="dialog-title">Change number of devotees</h2>
+                <p>{bookingDetail(dialog.booking)}</p>
+                <div className="counter">
+                  <button
+                    type="button"
+                    aria-label="Remove devotee"
+                    disabled={count <= 1 || submitting}
+                    onClick={() => setCount(count - 1)}
+                  >
+                    −
+                  </button>
+                  <strong>{count}</strong>
+                  <button
+                    type="button"
+                    aria-label="Add devotee"
+                    disabled={count >= MAX_DEVOTEES || submitting}
+                    onClick={() => setCount(count + 1)}
+                  >
+                    +
+                  </button>
+                </div>
+                {/* Display only. The server recalculates the real total from the slot price. */}
+                <p>New total: {formatPrice(dialog.booking.slot.price * count)}</p>
+                {dialogError && (
+                  <p className="field-error" role="alert">
+                    {dialogError}
+                  </p>
+                )}
+                <div className="modal-actions">
+                  <Button variant="secondary" onClick={closeDialog} disabled={submitting}>
+                    Close
+                  </Button>
+                  <Button
+                    loading={submitting}
+                    disabled={count === dialog.booking.numberOfDevotees}
+                    onClick={confirmModify}
+                  >
+                    Save changes
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
