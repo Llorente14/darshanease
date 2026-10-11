@@ -1,6 +1,7 @@
 const { body, param } = require("express-validator");
+const { MAX_DONATION_IDR } = require("../../utils/bookingPolicy");
 
-// Only slotId and numberOfDevotees are read. totalAmount and any other body field are ignored.
+// Only slotId, numberOfDevotees and donationAmount are read. totalAmount from the client is ignored.
 const createBookingValidator = [
   body("slotId")
     .exists().withMessage("slotId is required")
@@ -11,6 +12,12 @@ const createBookingValidator = [
     .exists().withMessage("numberOfDevotees is required")
     .bail()
     .isInt({ min: 1, max: 10 }).withMessage("numberOfDevotees must be between 1 and 10")
+    .toInt(),
+
+  body("donationAmount")
+    .optional()
+    .isInt({ min: 0, max: MAX_DONATION_IDR })
+    .withMessage(`donationAmount must be a whole number between 0 and ${MAX_DONATION_IDR}`)
     .toInt(),
 ];
 

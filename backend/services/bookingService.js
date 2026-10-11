@@ -44,7 +44,7 @@ const toBookingDTO = (booking) => ({
 // Order matters: lookup, expiry check, atomic seat reservation, price from DB, create.
 // If Booking.create fails after seats were taken, the seats are released again.
 // No Mongo transaction: the atomic $inc in reserveSeats plus the rollback covers this scope.
-const createBooking = async ({ userId, slotId, numberOfDevotees }) => {
+const createBooking = async ({ userId, slotId, numberOfDevotees, donationAmount = 0 }) => {
   const slot = await DarshanSlot.findById(slotId).lean();
   if (!slot) throw httpError(404, "Slot not found");
 
@@ -55,8 +55,8 @@ const createBooking = async ({ userId, slotId, numberOfDevotees }) => {
   const reserved = await reserveSeats(slotId, numberOfDevotees);
   if (!reserved) throw httpError(409, "Not enough seats available");
 
-  // Price always comes from the database, never from the request
-  const totalAmount = reserved.price * numberOfDevotees;
+  // totalAmount = price x devotees + donation, always computed on the server
+  const totalAmount = reserved.price * numberOfDevotees + donationAmount;
 
   let booking;
   try {
@@ -64,6 +64,7 @@ const createBooking = async ({ userId, slotId, numberOfDevotees }) => {
       user: userId,
       slot: slotId,
       numberOfDevotees,
+      donationAmount,
       totalAmount,
     });
   } catch (err) {

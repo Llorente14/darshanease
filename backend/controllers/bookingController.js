@@ -11,11 +11,12 @@ const { generateTicketQR } = require("../services/ticketService");
 const { sendBookingConfirmation } = require("../services/emailService");
 
 const createBookingHandler = asyncHandler(async (req, res) => {
-  const { slotId, numberOfDevotees } = req.body;
+  const { slotId, numberOfDevotees, donationAmount } = req.body;
   const booking = await createBooking({
     userId: req.user._id,
     slotId,
     numberOfDevotees,
+    donationAmount,
   });
   const dto = toBookingDTO(booking);
   res.status(201).json({
