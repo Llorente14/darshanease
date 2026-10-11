@@ -10,6 +10,7 @@ const FORCE = args.includes("--force");
 
 // Paste the Cloudinary https URL into imageUrl, then re-run `npm run seed` (no --reset needed).
 // Note: seeding sets imageUrl from this file, so an empty value here clears any URL set directly in the DB.
+// coordinates are approximate (~4 decimals); verify on openstreetmap.org if precision matters.
 const TEMPLES = [
   {
     templeName: "Kashi Vishwanath Temple",
@@ -18,24 +19,32 @@ const TEMPLES = [
     darshanEndTime: "21:00",
     price: 50000,
     imageUrl: "",
+    latitude: 25.3109,
+    longitude: 83.0107,
     description: "A revered Shiva temple in Varanasi on the western bank of the Ganga, and one of the twelve Jyotirlingas.",
     offerings: ["Jalabhishek", "Rudrabhishek", "Evening Aarti"],
   },
   { templeName: "Somnath Temple", location: "Veraval, Gujarat", darshanStartTime: "06:00", darshanEndTime: "21:00",
     price: 35000,
     imageUrl: "",
+    latitude: 20.8880,
+    longitude: 70.4013,
     description: "A Shiva temple on the Arabian Sea coast at Veraval, regarded as the first of the twelve Jyotirlingas.",
     offerings: ["Maha Abhishek", "Sandhya Aarti", "Evening Light and Sound Show"],
   },
   { templeName: "Mahakaleshwar Temple", location: "Ujjain, Madhya Pradesh", darshanStartTime: "05:00", darshanEndTime: "20:00",
     price: 75000,
     imageUrl: "",
+    latitude: 23.1828,
+    longitude: 75.7682,
     description: "A Shiva temple in Ujjain, one of the twelve Jyotirlingas, known for its early-morning Bhasma Aarti.",
     offerings: ["Bhasma Aarti", "Rudrabhishek", "Evening Aarti"],
   },
   { templeName: "Tirumala Venkateswara Temple", location: "Tirupati, Andhra Pradesh", darshanStartTime: "05:00", darshanEndTime: "21:00",
     price: 100000,
     imageUrl: "",
+    latitude: 13.6833,
+    longitude: 79.3472,
     description: "A hill temple in Tirupati dedicated to Lord Venkateswara, one of the most visited pilgrimage sites in the world.",
     offerings: ["Srivari Laddu Prasadam", "Suprabhatam Seva", "Hair offering (Mokku)"],
   },
