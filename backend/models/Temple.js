@@ -41,6 +41,8 @@ const templeSchema = new mongoose.Schema(
       min: [-180, "longitude must be between -180 and 180"],
       max: [180, "longitude must be between -180 and 180"],
     },
+    // Owner of the temple. Set when an organizer creates it; empty for seeded temples.
+    organizer: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
   },
   { timestamps: true }
 );
