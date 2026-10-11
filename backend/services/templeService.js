@@ -1,4 +1,5 @@
 const Temple = require("../models/Temple");
+const DarshanSlot = require("../models/DarshanSlot");
 const { listSlots } = require("./slotService");
 
 const listTemples = () =>
@@ -38,4 +39,91 @@ const getTempleDetail = async (id) => {
   return { temple: toTempleDTO(temple), slots };
 };
 
-module.exports = { listTemples, getTempleDetail };
+// ─── Organizer ──────────────────────────────────────────────────────────────
+// Everything below works on temples owned by the signed-in organizer only.
+// Another organizer's temple returns 404, the same as a missing one.
+
+const EDITABLE_FIELDS = [
+  "templeName",
+  "location",
+  "darshanStartTime",
+  "darshanEndTime",
+  "description",
+  "imageUrl",
+  "offerings",
+  "latitude",
+  "longitude",
+];
+
+const httpError = (statusCode, message) => {
+  const err = new Error(message);
+  err.statusCode = statusCode;
+  return err;
+};
+
+// Only EDITABLE_FIELDS are copied. organizer, _id and timestamps from the request are never read.
+const pickTempleData = (input) => {
+  const data = Object.fromEntries(EDITABLE_FIELDS.map((field) => [field, input[field]]));
+  return {
+    ...data,
+    description: data.description ?? "",
+    imageUrl: data.imageUrl ?? "",
+    offerings: data.offerings ?? [],
+    latitude: data.latitude ?? null,
+    longitude: data.longitude ?? null,
+  };
+};
+
+const listOrganizerTemples = async (userId) => {
+  const temples = await Temple.find({ organizer: userId }).sort({ templeName: 1 }).lean();
+  return temples.map(toTempleDTO);
+};
+
+const getOrganizerTemple = async ({ id, userId }) => {
+  const temple = await Temple.findOne({ _id: id, organizer: userId }).lean();
+  if (!temple) throw httpError(404, "Temple not found");
+  return toTempleDTO(temple);
+};
+
+const createOrganizerTemple = async ({ userId, input }) => {
+  const doc = await Temple.create({ ...pickTempleData(input), organizer: userId });
+  return toTempleDTO(doc.toObject());
+};
+
+// Uses a Mongoose document and save(), not findOneAndUpdate: only save() runs the pre("validate")
+// hooks (end time after start time, latitude/longitude as a pair).
+const updateOrganizerTemple = async ({ id, userId, input }) => {
+  const doc = await Temple.findOne({ _id: id, organizer: userId });
+  if (!doc) throw httpError(404, "Temple not found");
+
+  Object.assign(doc, pickTempleData(input));
+  await doc.save();
+  return toTempleDTO(doc.toObject());
+};
+
+// A temple with darshan slots cannot be deleted: listSlots sorts by temple name and would fail.
+const deleteOrganizerTemple = async ({ id, userId }) => {
+  const owned = await Temple.findOne({ _id: id, organizer: userId }).select("_id").lean();
+  if (!owned) throw httpError(404, "Temple not found");
+
+  const slotCount = await DarshanSlot.countDocuments({ temple: id });
+  if (slotCount > 0) {
+    throw httpError(
+      409,
+      "This temple still has darshan slots. Remove them before deleting the temple."
+    );
+  }
+
+  await Temple.deleteOne({ _id: id, organizer: userId });
+};
+
+module.exports = {
+  listTemples,
+  getTempleDetail,
+  toTempleDTO,
+  listOrganizerTemples,
+  getOrganizerTemple,
+  createOrganizerTemple,
+  updateOrganizerTemple,
+  deleteOrganizerTemple,
+};
