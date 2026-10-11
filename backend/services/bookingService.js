@@ -148,10 +148,59 @@ const cancelBooking = async ({ bookingId, userId }) => {
   return Booking.findById(bookingId).populate(SLOT_POPULATE).lean();
 };
 
+// Changes the number of devotees and moves the seat difference. No transaction: the atomic seat
+// operations plus the optimistic lock below are the guard.
+const modifyBooking = async ({ bookingId, userId, numberOfDevotees }) => {
+  const booking = await getBookingForUser({ bookingId, userId });
+  assertChangeable(booking);
+
+  const oldCount = booking.numberOfDevotees;
+  if (numberOfDevotees === oldCount) throw httpError(400, "Number of devotees is unchanged");
+
+  const diff = numberOfDevotees - oldCount;
+  const slotId = booking.slot._id;
+  // Price always comes from the database, never from the request
+  const totalAmount = booking.slot.price * numberOfDevotees;
+
+  // Optimistic lock: the update only matches while the count is still the one we read.
+  // Two concurrent modifies cannot both apply their seat difference.
+  const filter = { _id: bookingId, user: userId, numberOfDevotees: oldCount, ...ACTIVE_FILTER };
+  const update = { $set: { numberOfDevotees, totalAmount } };
+  const options = { returnDocument: "after", runValidators: true };
+  const changedElsewhere = () =>
+    httpError(409, "Booking was changed elsewhere, please refresh and try again");
+
+  if (diff > 0) {
+    // Reserve the extra seats first; give them back if the booking update does not go through
+    const reserved = await reserveSeats(slotId, diff);
+    if (!reserved) throw httpError(409, "Not enough seats available");
+
+    let updated;
+    try {
+      updated = await Booking.findOneAndUpdate(filter, update, options);
+    } catch (err) {
+      await releaseSeats(slotId, diff).catch(logReleaseFailure("modify rollback"));
+      throw err;
+    }
+    if (!updated) {
+      await releaseSeats(slotId, diff).catch(logReleaseFailure("modify rollback"));
+      throw changedElsewhere();
+    }
+  } else {
+    // Fewer devotees: release only after the booking update has gone through
+    const updated = await Booking.findOneAndUpdate(filter, update, options);
+    if (!updated) throw changedElsewhere();
+    await releaseSeats(slotId, -diff).catch(logReleaseFailure("modify"));
+  }
+
+  return Booking.findById(bookingId).populate(SLOT_POPULATE).lean();
+};
+
 module.exports = {
   createBooking,
   getBookingForUser,
   listBookingsForUser,
   cancelBooking,
+  modifyBooking,
   toBookingDTO,
 };
