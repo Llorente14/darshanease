@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Slots from "./pages/Slots";
+import TempleDetail from "./pages/TempleDetail";
 import BookSlot from "./pages/BookSlot";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import MyBookings from "./pages/MyBookings";
@@ -46,6 +47,7 @@ function App() {
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/register" element={<RegisterRoute />} />
       <Route path="/slots" element={<Slots />} />
+      <Route path="/temples/:id" element={<TempleDetail />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/book/:slotId" element={<BookSlot />} />
