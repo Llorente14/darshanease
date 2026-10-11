@@ -8,6 +8,7 @@ import TempleDetail from "./pages/TempleDetail";
 import BookSlot from "./pages/BookSlot";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import MyBookings from "./pages/MyBookings";
+import OrganizerTemples from "./pages/OrganizerTemples";
 import ProtectedRoute, { SessionLoader } from "./components/ProtectedRoute";
 
 // "/" -> /dashboard when authenticated, otherwise /login
@@ -53,6 +54,9 @@ function App() {
         <Route path="/book/:slotId" element={<BookSlot />} />
         <Route path="/bookings" element={<MyBookings />} />
         <Route path="/bookings/:bookingId" element={<BookingConfirmation />} />
+      </Route>
+      <Route element={<ProtectedRoute allowedRoles={["organizer"]} />}>
+        <Route path="/organizer" element={<OrganizerTemples />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

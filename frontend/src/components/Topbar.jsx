@@ -71,6 +71,11 @@ export default function Topbar() {
           My Bookings
         </Link>
       )}
+      {user?.role === "organizer" && (
+        <Link className="topbar-link" to="/organizer">
+          Organizer
+        </Link>
+      )}
       <div className="top-search">
         <svg
           width="18"
