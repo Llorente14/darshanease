@@ -31,6 +31,7 @@ const buildBookingEmail = (booking) => {
     ["Date", formatDate(slot.date)],
     ["Time", `${slot.startTime} - ${slot.endTime} WIB`],
     ["Devotees", booking.numberOfDevotees],
+    ...(booking.donationAmount > 0 ? [["Donation", priceFormatter.format(booking.donationAmount)]] : []),
     ["Total", priceFormatter.format(booking.totalAmount)],
   ];
 

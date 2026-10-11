@@ -23,6 +23,8 @@ const toBookingDTO = (booking) => ({
   bookingCode: toBookingCode(booking._id),
   numberOfDevotees: booking.numberOfDevotees,
   totalAmount: booking.totalAmount,
+  // Older bookings (.lean(), no schema defaults) have no donationAmount stored
+  donationAmount: booking.donationAmount ?? 0,
   bookingDate: booking.bookingDate,
   // Sprint 1 bookings have no status stored; .lean() skips schema defaults, so fall back here
   status: booking.status || "confirmed",
