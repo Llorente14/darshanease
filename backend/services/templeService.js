@@ -40,8 +40,8 @@ const getTempleDetail = async (id) => {
 };
 
 // ─── Organizer ──────────────────────────────────────────────────────────────
-// Everything below works on temples owned by the signed-in organizer only.
-// Another organizer's temple returns 404, the same as a missing one.
+// Everything below is limited by a scope from ownerScope(): admin sees all temples, an organizer only
+// their own. Another organizer's temple returns 404, the same as a missing one.
 
 const EDITABLE_FIELDS = [
   "templeName",
@@ -74,13 +74,13 @@ const pickTempleData = (input) => {
   };
 };
 
-const listOrganizerTemples = async (userId) => {
-  const temples = await Temple.find({ organizer: userId }).sort({ templeName: 1 }).lean();
+const listOrganizerTemples = async (scope) => {
+  const temples = await Temple.find(scope).sort({ templeName: 1 }).lean();
   return temples.map(toTempleDTO);
 };
 
-const getOrganizerTemple = async ({ id, userId }) => {
-  const temple = await Temple.findOne({ _id: id, organizer: userId }).lean();
+const getOrganizerTemple = async ({ id, scope }) => {
+  const temple = await Temple.findOne({ _id: id, ...scope }).lean();
   if (!temple) throw httpError(404, "Temple not found");
   return toTempleDTO(temple);
 };
@@ -92,8 +92,8 @@ const createOrganizerTemple = async ({ userId, input }) => {
 
 // Uses a Mongoose document and save(), not findOneAndUpdate: only save() runs the pre("validate")
 // hooks (end time after start time, latitude/longitude as a pair).
-const updateOrganizerTemple = async ({ id, userId, input }) => {
-  const doc = await Temple.findOne({ _id: id, organizer: userId });
+const updateOrganizerTemple = async ({ id, scope, input }) => {
+  const doc = await Temple.findOne({ _id: id, ...scope });
   if (!doc) throw httpError(404, "Temple not found");
 
   Object.assign(doc, pickTempleData(input));
@@ -102,8 +102,8 @@ const updateOrganizerTemple = async ({ id, userId, input }) => {
 };
 
 // A temple with darshan slots cannot be deleted: listSlots sorts by temple name and would fail.
-const deleteOrganizerTemple = async ({ id, userId }) => {
-  const owned = await Temple.findOne({ _id: id, organizer: userId }).select("_id").lean();
+const deleteOrganizerTemple = async ({ id, scope }) => {
+  const owned = await Temple.findOne({ _id: id, ...scope }).select("_id").lean();
   if (!owned) throw httpError(404, "Temple not found");
 
   const slotCount = await DarshanSlot.countDocuments({ temple: id });
@@ -114,7 +114,7 @@ const deleteOrganizerTemple = async ({ id, userId }) => {
     );
   }
 
-  await Temple.deleteOne({ _id: id, organizer: userId });
+  await Temple.deleteOne({ _id: id, ...scope });
 };
 
 module.exports = {

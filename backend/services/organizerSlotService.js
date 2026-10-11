@@ -68,19 +68,19 @@ const toOrganizerSlotDTO = (slot, temple, stats, now = new Date()) => ({
 });
 
 // Missing slot and slot of another organizer's temple both return 404, so ids cannot be probed
-const loadOwnedSlot = async ({ id, userId }) => {
+const loadOwnedSlot = async ({ id, scope }) => {
   const slot = await DarshanSlot.findById(id).lean();
   const temple =
     slot &&
-    (await Temple.findOne({ _id: slot.temple, organizer: userId })
+    (await Temple.findOne({ _id: slot.temple, ...scope })
       .select("templeName darshanStartTime darshanEndTime")
       .lean());
   if (!slot || !temple) throw httpError(404, "Slot not found");
   return { slot, temple };
 };
 
-const listOrganizerSlots = async ({ userId, templeId }) => {
-  const temples = await Temple.find({ organizer: userId })
+const listOrganizerSlots = async ({ scope, templeId }) => {
+  const temples = await Temple.find(scope)
     .select("templeName darshanStartTime darshanEndTime")
     .lean();
   if (templeId && !temples.some((temple) => String(temple._id) === templeId)) {
@@ -102,10 +102,10 @@ const listOrganizerSlots = async ({ userId, templeId }) => {
   );
 };
 
-const createOrganizerSlot = async ({ userId, input }) => {
+const createOrganizerSlot = async ({ scope, input }) => {
   const { templeId, date, startTime, endTime, availableSeats, price } = input;
 
-  const temple = await Temple.findOne({ _id: templeId, organizer: userId })
+  const temple = await Temple.findOne({ _id: templeId, ...scope })
     .select("templeName darshanStartTime darshanEndTime")
     .lean();
   if (!temple) throw httpError(404, "Temple not found");
@@ -132,8 +132,8 @@ const createOrganizerSlot = async ({ userId, input }) => {
 };
 
 // Editing the schedule or price is blocked while active bookings exist. Only availableSeats may change then.
-const updateOrganizerSlot = async ({ id, userId, input }) => {
-  const { slot, temple } = await loadOwnedSlot({ id, userId });
+const updateOrganizerSlot = async ({ id, scope, input }) => {
+  const { slot, temple } = await loadOwnedSlot({ id, scope });
   const now = new Date();
   if (getSlotStatus(slot, now) === "expired") throw httpError(400, "Past slots cannot be edited");
 
@@ -181,8 +181,8 @@ const updateOrganizerSlot = async ({ id, userId, input }) => {
 };
 
 // A slot with any booking (including cancelled) is kept, so booking history stays linked to a real slot
-const deleteOrganizerSlot = async ({ id, userId }) => {
-  const { slot } = await loadOwnedSlot({ id, userId });
+const deleteOrganizerSlot = async ({ id, scope }) => {
+  const { slot } = await loadOwnedSlot({ id, scope });
 
   const bookingCount = await Booking.countDocuments({ slot: id });
   if (bookingCount > 0) {
@@ -199,8 +199,8 @@ const deleteOrganizerSlot = async ({ id, userId }) => {
   }
 };
 
-const listSlotBookings = async ({ id, userId }) => {
-  const { slot, temple } = await loadOwnedSlot({ id, userId });
+const listSlotBookings = async ({ id, scope }) => {
+  const { slot, temple } = await loadOwnedSlot({ id, scope });
 
   const bookings = await Booking.find({ slot: id })
     .populate("user", "name email phone")
