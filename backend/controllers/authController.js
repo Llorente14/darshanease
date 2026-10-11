@@ -3,10 +3,11 @@ const generateToken = require("../utils/generateToken");
 const asyncHandler = require("../utils/asyncHandler");
 const bcrypt = require("bcryptjs");
 
-// Pre-computed dummy hash to run against when the email is not found.
+// Pre-computed valid bcrypt hash (10 rounds) to run against when the email is not found.
 // This keeps the response time similar whether the email exists or not,
 // preventing user-enumeration via timing differences.
-const DUMMY_HASH = "$2a$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012345";
+// Generated once: bcrypt.hash('dummy_placeholder_password', 10)
+const DUMMY_HASH = "$2b$10$Yi/5lcJ49akDMbo7UxDzlOOvcYXUnNyRWqoohZx/MPLm2k.hOlTwy";
 
 // @route   POST /api/auth/register
 // @desc    Register a new devotee account
