@@ -23,6 +23,8 @@ const toBookingDTO = (booking) => ({
   numberOfDevotees: booking.numberOfDevotees,
   totalAmount: booking.totalAmount,
   bookingDate: booking.bookingDate,
+  // Sprint 1 bookings have no status stored; .lean() skips schema defaults, so fall back here
+  status: booking.status || "confirmed",
   slot: {
     _id: booking.slot._id,
     date: booking.slot.date.toISOString().slice(0, 10),
