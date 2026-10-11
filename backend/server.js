@@ -6,6 +6,7 @@ const helmet = require("helmet");
 const cors = require("cors");
 
 const connectDB = require("./config/db");
+const { initSocket } = require("./config/socket");
 const { globalLimiter } = require("./middleware/rateLimiter");
 const errorHandler = require("./middleware/errorHandler");
 
@@ -58,6 +59,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
+initSocket(server);
 
 connectDB().then(() => {
   server.listen(PORT, () => {
