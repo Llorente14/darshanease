@@ -590,3 +590,6 @@ td small { display: block; color: var(--muted); margin-top: 4px; }
 .password-toggle:focus-visible { outline: 2px solid var(--primary-hover); outline-offset: 1px; }
 .loading-state { min-height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 14px; color: var(--muted); font-size: 13px; }
 .loading-state .spin svg { width: 30px; height: 30px; color: var(--primary-dark); }
+.feedback.error { color: #b53f48; background: #ffebed; border: 1px solid #f6c6cb; }
+.auth-switch a { color: var(--primary-dark); font-weight: 700; text-decoration: none; }
+.auth-switch a:hover { text-decoration: underline; }
