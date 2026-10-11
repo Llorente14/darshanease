@@ -81,7 +81,7 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     logout();
-    navigate("/register", { replace: true });
+    navigate("/login", { replace: true });
   };
 
   return (
