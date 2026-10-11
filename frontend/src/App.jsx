@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./context/useAuth";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -18,11 +18,16 @@ function IndexRedirect() {
   );
 }
 
-// "/login" -> /dashboard when already authenticated
+// "/login" -> back to the page that required login (state.from), else /dashboard, when authenticated
 function LoginRoute() {
   const { token, loading } = useAuth();
+  const location = useLocation();
   if (loading) return <SessionLoader />;
-  return token ? <Navigate to="/dashboard" replace /> : <Login />;
+  return token ? (
+    <Navigate to={location.state?.from || "/dashboard"} replace />
+  ) : (
+    <Login />
+  );
 }
 
 // "/register" -> /dashboard when already authenticated
