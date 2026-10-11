@@ -2,7 +2,7 @@ const Booking = require("../models/Booking");
 const DarshanSlot = require("../models/DarshanSlot");
 const { getSlotStatus } = require("../utils/dateTime");
 const { toBookingCode } = require("../utils/bookingCode");
-const { canChangeBooking } = require("../utils/bookingPolicy");
+const { canChangeBooking, CHANGE_NOT_ALLOWED_MESSAGE } = require("../utils/bookingPolicy");
 const { reserveSeats, releaseSeats } = require("./seatService");
 
 const SLOT_POPULATE = {
@@ -117,4 +117,41 @@ const listBookingsForUser = async (userId) => {
   return { upcoming, past };
 };
 
-module.exports = { createBooking, getBookingForUser, listBookingsForUser, toBookingDTO };
+// Sprint 1 bookings have no status stored in the DB, so "active" also matches a missing field
+const ACTIVE_FILTER = { $or: [{ status: "confirmed" }, { status: { $exists: false } }] };
+
+const assertChangeable = (booking) => {
+  if ((booking.status || "confirmed") !== "confirmed") {
+    throw httpError(409, "Booking is no longer active");
+  }
+  if (!canChangeBooking(booking)) throw httpError(400, CHANGE_NOT_ALLOWED_MESSAGE);
+};
+
+const logReleaseFailure = (action) => (err) =>
+  console.error(`Seat release failed after ${action}:`, err.message);
+
+// The atomic status flip is what prevents double release: only one request can move a booking
+// from active to cancelled, so its seats are released exactly once even if two cancels race.
+const cancelBooking = async ({ bookingId, userId }) => {
+  const booking = await getBookingForUser({ bookingId, userId });
+  assertChangeable(booking);
+
+  const updated = await Booking.findOneAndUpdate(
+    { _id: bookingId, user: userId, ...ACTIVE_FILTER },
+    { $set: { status: "cancelled" } },
+    { returnDocument: "after" }
+  );
+  if (!updated) throw httpError(409, "Booking is already cancelled or no longer active");
+
+  await releaseSeats(updated.slot, updated.numberOfDevotees).catch(logReleaseFailure("cancel"));
+
+  return Booking.findById(bookingId).populate(SLOT_POPULATE).lean();
+};
+
+module.exports = {
+  createBooking,
+  getBookingForUser,
+  listBookingsForUser,
+  cancelBooking,
+  toBookingDTO,
+};
