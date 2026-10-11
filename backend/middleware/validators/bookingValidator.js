@@ -1,4 +1,4 @@
-const { body } = require("express-validator");
+const { body, param } = require("express-validator");
 
 // Only slotId and numberOfDevotees are read. totalAmount and any other body field are ignored.
 const createBookingValidator = [
@@ -14,4 +14,8 @@ const createBookingValidator = [
     .toInt(),
 ];
 
-module.exports = { createBookingValidator };
+const getBookingValidator = [
+  param("id").isMongoId().withMessage("id must be a valid id"),
+];
+
+module.exports = { createBookingValidator, getBookingValidator };
