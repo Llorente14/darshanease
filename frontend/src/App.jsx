@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Slots from "./pages/Slots";
+import BookSlot from "./pages/BookSlot";
 import ProtectedRoute, { SessionLoader } from "./components/ProtectedRoute";
 
 // "/" -> /dashboard when authenticated, otherwise /login
@@ -40,6 +41,7 @@ function App() {
       <Route path="/slots" element={<Slots />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/book/:slotId" element={<BookSlot />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
