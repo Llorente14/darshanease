@@ -24,3 +24,10 @@ export async function getSlotById(id, signal) {
   const response = await api.get(`/slots/${id}`, { signal });
   return response.data;
 }
+
+// GET /temples/:id — PUBLIC. Temple details plus its upcoming slots.
+// Returns response.data ({ success, message, data:{ temple, slots } }).
+export async function getTempleById(id, signal) {
+  const response = await api.get(`/temples/${id}`, { signal });
+  return response.data;
+}
