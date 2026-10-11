@@ -160,8 +160,9 @@ const modifyBooking = async ({ bookingId, userId, numberOfDevotees }) => {
 
   const diff = numberOfDevotees - oldCount;
   const slotId = booking.slot._id;
-  // Price always comes from the database, never from the request
-  const totalAmount = booking.slot.price * numberOfDevotees;
+  // Price always comes from the database, never from the request.
+  // The donation stays as it was; only the ticket part changes.
+  const totalAmount = booking.slot.price * numberOfDevotees + (booking.donationAmount ?? 0);
 
   // Optimistic lock: the update only matches while the count is still the one we read.
   // Two concurrent modifies cannot both apply their seat difference.
