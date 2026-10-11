@@ -18,12 +18,15 @@ const toTempleDTO = (t) => ({
   description: t.description ?? "",
   imageUrl: t.imageUrl ?? "",
   offerings: t.offerings ?? [],
+  // Coordinates are optional; temples without them return null
+  latitude: t.latitude ?? null,
+  longitude: t.longitude ?? null,
 });
 
 // Temple details plus its upcoming slots (same slot shape as GET /slots)
 const getTempleDetail = async (id) => {
   const temple = await Temple.findById(id)
-    .select("templeName location darshanStartTime darshanEndTime description imageUrl offerings")
+    .select("templeName location darshanStartTime darshanEndTime description imageUrl offerings latitude longitude")
     .lean();
   if (!temple) {
     const err = new Error("Temple not found");
