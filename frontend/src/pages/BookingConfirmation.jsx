@@ -159,8 +159,8 @@ export default function BookingConfirmation() {
         </article>
         <div className="confirmation-actions">
           <Button onClick={() => navigate("/slots")}>Book another slot</Button>
-          <Button variant="secondary" onClick={() => navigate("/dashboard")}>
-            Go to dashboard
+          <Button variant="secondary" onClick={() => navigate("/bookings")}>
+            My bookings
           </Button>
         </div>
       </>

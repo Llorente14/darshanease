@@ -66,6 +66,11 @@ export default function Topbar() {
       <Link className="topbar-link" to="/slots">
         Darshan Slots
       </Link>
+      {user && (
+        <Link className="topbar-link" to="/bookings">
+          My Bookings
+        </Link>
+      )}
       <div className="top-search">
         <svg
           width="18"
