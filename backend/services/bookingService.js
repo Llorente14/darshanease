@@ -1,13 +1,40 @@
 const Booking = require("../models/Booking");
 const DarshanSlot = require("../models/DarshanSlot");
 const { getSlotStatus } = require("../utils/dateTime");
+const { toBookingCode } = require("../utils/bookingCode");
 const { reserveSeats, releaseSeats } = require("./seatService");
+
+const SLOT_POPULATE = {
+  path: "slot",
+  select: "date startTime endTime price temple",
+  populate: { path: "temple", select: "templeName location" },
+};
 
 const httpError = (statusCode, message) => {
   const err = new Error(message);
   err.statusCode = statusCode;
   return err;
 };
+
+// Response shape for a booking. The date is formatted the same way as GET /slots.
+const toBookingDTO = (booking) => ({
+  _id: booking._id,
+  bookingCode: toBookingCode(booking._id),
+  numberOfDevotees: booking.numberOfDevotees,
+  totalAmount: booking.totalAmount,
+  bookingDate: booking.bookingDate,
+  slot: {
+    _id: booking.slot._id,
+    date: booking.slot.date.toISOString().slice(0, 10),
+    startTime: booking.slot.startTime,
+    endTime: booking.slot.endTime,
+    price: booking.slot.price,
+    temple: {
+      templeName: booking.slot.temple.templeName,
+      location: booking.slot.temple.location,
+    },
+  },
+});
 
 // Order matters: lookup, expiry check, atomic seat reservation, price from DB, create.
 // If Booking.create fails after seats were taken, the seats are released again.
@@ -42,13 +69,16 @@ const createBooking = async ({ userId, slotId, numberOfDevotees }) => {
     throw err;
   }
 
-  return Booking.findById(booking._id)
-    .populate({
-      path: "slot",
-      select: "date startTime endTime price temple",
-      populate: { path: "temple", select: "templeName location" },
-    })
-    .lean();
+  return Booking.findById(booking._id).populate(SLOT_POPULATE).lean();
 };
 
-module.exports = { createBooking };
+// Only the owner can read a booking. Another user's booking returns 404, not 403, so ids are not probed.
+const getBookingForUser = async ({ bookingId, userId }) => {
+  const booking = await Booking.findOne({ _id: bookingId, user: userId })
+    .populate(SLOT_POPULATE)
+    .lean();
+  if (!booking) throw httpError(404, "Booking not found");
+  return booking;
+};
+
+module.exports = { createBooking, getBookingForUser, toBookingDTO };
