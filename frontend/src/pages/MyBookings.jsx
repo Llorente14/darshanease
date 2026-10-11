@@ -344,8 +344,14 @@ export default function MyBookings() {
                     +
                   </button>
                 </div>
-                {/* Display only. The server recalculates the real total from the slot price. */}
-                <p>New total: {formatPrice(dialog.booking.slot.price * count)}</p>
+                {/* Display only. The server recalculates the real total (tickets + donation). */}
+                <p>
+                  New total:{" "}
+                  {formatPrice(dialog.booking.slot.price * count + (dialog.booking.donationAmount ?? 0))}
+                </p>
+                {dialog.booking.donationAmount > 0 && (
+                  <small>Includes your {formatPrice(dialog.booking.donationAmount)} donation.</small>
+                )}
                 {dialogError && (
                   <p className="field-error" role="alert">
                     {dialogError}
