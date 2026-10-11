@@ -6,6 +6,7 @@ import Footer from "../components/Footer";
 import SlotCard from "../components/SlotCard";
 import SlotFilters from "../components/SlotFilters";
 import Topbar from "../components/Topbar";
+import { useSlotUpdates } from "../hooks/useSlotUpdates";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const ID_PATTERN = /^[a-f\d]{24}$/i;
@@ -104,6 +105,16 @@ export default function Slots() {
   const [response, setResponse] = useState({ key: null, slots: [], failed: false });
   const requestKey = `${templeId}|${date}|${retryCount}`;
   const isCurrent = response.key === requestKey;
+
+  // Realtime: patch only the matching slot in place. No refetch, and _id keys stay the same.
+  useSlotUpdates(({ slotId, availableSeats, status }) => {
+    setResponse((prev) => ({
+      ...prev,
+      slots: prev.slots.map((s) =>
+        s._id === slotId ? { ...s, availableSeats, status } : s
+      ),
+    }));
+  });
 
   // Temples only feed the dropdown; a failure here must not block the slot list.
   useEffect(() => {
