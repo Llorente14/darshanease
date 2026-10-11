@@ -14,3 +14,10 @@ export async function getBookingById(id, signal) {
   const response = await api.get(`/bookings/${id}`, { signal });
   return response.data;
 }
+
+// GET /bookings/me — the signed-in user's bookings, already split and sorted by the server.
+// Returns response.data ({ success, message, data:{ upcoming, past, count } }).
+export async function getMyBookings(signal) {
+  const response = await api.get("/bookings/me", { signal });
+  return response.data;
+}
