@@ -43,12 +43,12 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Hash password with bcrypt (10 salt rounds) before saving, only when modified
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+// Hash password with bcrypt (10 salt rounds) before saving, only when modified.
+// Mongoose 9: async hooks must not declare a `next` callback; just return/throw.
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
 // Remove password and __v from any JSON/object output
