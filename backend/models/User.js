@@ -39,6 +39,9 @@ const userSchema = new mongoose.Schema(
       enum: ["devotee", "organizer", "admin"],
       default: "devotee",
     },
+    // Deactivated accounts cannot log in or use an existing token. Accounts created before this field
+    // have no value stored and count as active.
+    isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

@@ -72,6 +72,13 @@ const login = asyncHandler(async (req, res) => {
     });
   }
 
+  if (user.isActive === false) {
+    return res.status(403).json({
+      success: false,
+      message: "This account has been deactivated. Contact the administrator.",
+    });
+  }
+
   const token = generateToken(user._id, user.role);
 
   // Convert to plain object so the schema transform removes password & __v
