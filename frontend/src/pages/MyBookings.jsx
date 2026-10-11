@@ -34,7 +34,7 @@ function SpinnerIcon() {
   );
 }
 
-function BookingCard({ booking, muted, onView }) {
+function BookingCard({ booking, muted, onView, onCancel, onModify }) {
   const { slot } = booking;
   const parts = formatSlotDateParts(slot.date);
   const badge = statusBadge(booking.status);
@@ -70,6 +70,17 @@ function BookingCard({ booking, muted, onView }) {
         <Button variant="secondary" onClick={onView}>
           View e-ticket
         </Button>
+        {!muted && booking.canChange && (
+          <Button variant="secondary" onClick={onModify}>
+            Modify
+          </Button>
+        )}
+        {!muted && booking.canChange && (
+          <Button variant="danger" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+        {!muted && !booking.canChange && <small>Changes closed</small>}
       </div>
     </article>
   );
