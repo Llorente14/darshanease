@@ -133,6 +133,18 @@ export default function BookingConfirmation() {
                   <small>Devotees</small>
                   <strong>{booking.numberOfDevotees}</strong>
                 </div>
+                {booking.donationAmount > 0 && (
+                  <>
+                    <div>
+                      <small>Tickets</small>
+                      <strong>{formatPrice(booking.totalAmount - booking.donationAmount)}</strong>
+                    </div>
+                    <div>
+                      <small>Donation</small>
+                      <strong>{formatPrice(booking.donationAmount)}</strong>
+                    </div>
+                  </>
+                )}
                 <div>
                   <small>Total</small>
                   <strong>{formatPrice(booking.totalAmount)}</strong>
