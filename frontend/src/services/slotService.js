@@ -17,3 +17,10 @@ export async function getTemples(signal) {
   const response = await api.get("/temples", { signal });
   return response.data;
 }
+
+// GET /slots/:id — PUBLIC. Single slot for the booking page.
+// Returns response.data ({ success, message, data:{ slot } }).
+export async function getSlotById(id, signal) {
+  const response = await api.get(`/slots/${id}`, { signal });
+  return response.data;
+}
