@@ -1,0 +1,191 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getMyBookings } from "../services/bookingService";
+import Button from "../components/Button";
+import Footer from "../components/Footer";
+import Topbar from "../components/Topbar";
+import { formatPrice, formatSlotDateParts, formatTimeRange } from "../utils/format";
+
+// Status badge per API status. Unknown values are shown as-is with a neutral tone.
+const STATUS_BADGE = {
+  confirmed: { label: "Confirmed", tone: "status-success" },
+  pending: { label: "Pending", tone: "status-warning" },
+  cancelled: { label: "Cancelled", tone: "status-danger" },
+  failed: { label: "Failed", tone: "status-danger" },
+};
+
+const statusBadge = (status) =>
+  STATUS_BADGE[status] ?? { label: String(status ?? "Unknown"), tone: "status-neutral" };
+
+function SpinnerIcon() {
+  return (
+    <svg
+      width="27"
+      height="27"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
+  );
+}
+
+function BookingCard({ booking, muted, onView }) {
+  const { slot } = booking;
+  const parts = formatSlotDateParts(slot.date);
+  const badge = statusBadge(booking.status);
+
+  return (
+    <article className={`history-card${muted ? " muted" : ""}`}>
+      <div className="history-date">
+        <strong>{parts.day}</strong>
+        <span>
+          {parts.weekday}
+          <br />
+          {parts.month}
+        </span>
+      </div>
+      <div className="history-main">
+        <div>
+          <span className={`status ${badge.tone}`}>
+            <span className="status-dot" aria-hidden="true" />
+            {badge.label}
+          </span>
+          <small>{booking.bookingCode}</small>
+        </div>
+        <h3>{slot.temple.templeName}</h3>
+        <p>
+          {formatTimeRange(slot.startTime, slot.endTime)}
+          <span />
+          {booking.numberOfDevotees} devotee(s)
+          <span />
+          {formatPrice(booking.totalAmount)}
+        </p>
+      </div>
+      <div className="history-actions">
+        <Button variant="secondary" onClick={onView}>
+          View e-ticket
+        </Button>
+      </div>
+    </article>
+  );
+}
+
+export default function MyBookings() {
+  const navigate = useNavigate();
+  const [tab, setTab] = useState("upcoming");
+  const [retryCount, setRetryCount] = useState(0);
+
+  // Same pattern as the other pages: a response only counts when its key matches the current request
+  const [request, setRequest] = useState({ key: null, data: null, failed: false });
+  const requestKey = String(retryCount);
+  const isCurrent = request.key === requestKey;
+  const loading = !isCurrent;
+  const failed = isCurrent && request.failed;
+  // Lists come from the server already split and sorted; they are shown as received
+  const upcoming = isCurrent && request.data ? request.data.upcoming : [];
+  const past = isCurrent && request.data ? request.data.past : [];
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getMyBookings(controller.signal)
+      .then((result) => setRequest({ key: requestKey, data: result.data, failed: false }))
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setRequest({ key: requestKey, data: null, failed: true });
+      });
+    return () => controller.abort();
+  }, [requestKey]);
+
+  const list = tab === "upcoming" ? upcoming : past;
+
+  let body;
+  if (loading) {
+    body = (
+      <div className="state-card">
+        <span className="state-icon spin">
+          <SpinnerIcon />
+        </span>
+        <h2>Loading your bookings</h2>
+        <p>Fetching your booking history.</p>
+      </div>
+    );
+  } else if (failed) {
+    body = (
+      <div className="state-card">
+        <h2>We could not load your bookings</h2>
+        <p>Please check your connection and try again.</p>
+        <Button onClick={() => setRetryCount((count) => count + 1)}>Try again</Button>
+      </div>
+    );
+  } else if (list.length === 0) {
+    body =
+      tab === "upcoming" ? (
+        <div className="state-card">
+          <h2>No upcoming bookings</h2>
+          <p>Book a darshan slot and it will appear here.</p>
+          <Button onClick={() => navigate("/slots")}>Browse darshan slots</Button>
+        </div>
+      ) : (
+        <div className="state-card">
+          <h2>No past bookings</h2>
+          <p>Completed and cancelled bookings will appear here.</p>
+        </div>
+      );
+  } else {
+    body = (
+      <div className="slot-list">
+        {list.map((booking) => (
+          <BookingCard
+            key={booking._id}
+            booking={booking}
+            muted={tab === "past"}
+            onView={() => navigate(`/bookings/${booking._id}`)}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="public-shell">
+      <Topbar />
+      <main className="slots-main">
+        <div className="page-header">
+          <div>
+            <span className="eyebrow">My bookings</span>
+            <h1>Booking history</h1>
+          </div>
+        </div>
+        {!loading && !failed && (
+          <div className="booking-tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "upcoming"}
+              className={tab === "upcoming" ? "active" : ""}
+              onClick={() => setTab("upcoming")}
+            >
+              Upcoming <span>{upcoming.length}</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "past"}
+              className={tab === "past" ? "active" : ""}
+              onClick={() => setTab("past")}
+            >
+              Past <span>{past.length}</span>
+            </button>
+          </div>
+        )}
+        {body}
+      </main>
+      <Footer />
+    </div>
+  );
+}
