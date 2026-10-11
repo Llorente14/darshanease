@@ -8,11 +8,37 @@ const args = process.argv.slice(2);
 const RESET = args.includes("--reset");
 const FORCE = args.includes("--force");
 
+// Paste the Cloudinary https URL into imageUrl, then re-run `npm run seed` (no --reset needed).
+// Note: seeding sets imageUrl from this file, so an empty value here clears any URL set directly in the DB.
 const TEMPLES = [
-  { templeName: "Kashi Vishwanath Temple", location: "Varanasi, Uttar Pradesh", darshanStartTime: "05:00", darshanEndTime: "21:00", price: 50000 },
-  { templeName: "Somnath Temple", location: "Veraval, Gujarat", darshanStartTime: "06:00", darshanEndTime: "21:00", price: 35000 },
-  { templeName: "Mahakaleshwar Temple", location: "Ujjain, Madhya Pradesh", darshanStartTime: "05:00", darshanEndTime: "20:00", price: 75000 },
-  { templeName: "Tirumala Venkateswara Temple", location: "Tirupati, Andhra Pradesh", darshanStartTime: "05:00", darshanEndTime: "21:00", price: 100000 },
+  {
+    templeName: "Kashi Vishwanath Temple",
+    location: "Varanasi, Uttar Pradesh",
+    darshanStartTime: "05:00",
+    darshanEndTime: "21:00",
+    price: 50000,
+    imageUrl: "",
+    description: "A revered Shiva temple in Varanasi on the western bank of the Ganga, and one of the twelve Jyotirlingas.",
+    offerings: ["Jalabhishek", "Rudrabhishek", "Evening Aarti"],
+  },
+  { templeName: "Somnath Temple", location: "Veraval, Gujarat", darshanStartTime: "06:00", darshanEndTime: "21:00",
+    price: 35000,
+    imageUrl: "",
+    description: "A Shiva temple on the Arabian Sea coast at Veraval, regarded as the first of the twelve Jyotirlingas.",
+    offerings: ["Maha Abhishek", "Sandhya Aarti", "Evening Light and Sound Show"],
+  },
+  { templeName: "Mahakaleshwar Temple", location: "Ujjain, Madhya Pradesh", darshanStartTime: "05:00", darshanEndTime: "20:00",
+    price: 75000,
+    imageUrl: "",
+    description: "A Shiva temple in Ujjain, one of the twelve Jyotirlingas, known for its early-morning Bhasma Aarti.",
+    offerings: ["Bhasma Aarti", "Rudrabhishek", "Evening Aarti"],
+  },
+  { templeName: "Tirumala Venkateswara Temple", location: "Tirupati, Andhra Pradesh", darshanStartTime: "05:00", darshanEndTime: "21:00",
+    price: 100000,
+    imageUrl: "",
+    description: "A hill temple in Tirupati dedicated to Lord Venkateswara, one of the most visited pilgrimage sites in the world.",
+    offerings: ["Srivari Laddu Prasadam", "Suprabhatam Seva", "Hair offering (Mokku)"],
+  },
 ];
 
 const SLOT_TIMES = [
@@ -29,7 +55,7 @@ async function run() {
     process.exit(1);
   }
 
-  await mongoose.connect(process.env.MONGODB_URI);
+  await mongoose.connect(process.env.MONGO_URI);
 
   if (RESET) {
     await DarshanSlot.deleteMany({});
