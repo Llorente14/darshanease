@@ -6,7 +6,7 @@ const helmet = require("helmet");
 const cors = require("cors");
 
 const connectDB = require("./config/db");
-const globalLimiter = require("./middleware/rateLimiter");
+const { globalLimiter } = require("./middleware/rateLimiter");
 const errorHandler = require("./middleware/errorHandler");
 
 // Fail fast on missing required env vars
@@ -23,6 +23,10 @@ const app = express();
 
 // Render sits behind a proxy
 app.set("trust proxy", 1);
+
+// Auth routes
+const authRoutes = require("./routes/authRoutes");
+app.use("/api/auth", authRoutes);
 
 // Security middleware
 app.use(helmet());
