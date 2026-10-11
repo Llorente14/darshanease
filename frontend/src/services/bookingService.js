@@ -21,3 +21,18 @@ export async function getMyBookings(signal) {
   const response = await api.get("/bookings/me", { signal });
   return response.data;
 }
+
+// PATCH /bookings/:id/cancel — owner only. The server decides whether the booking is still changeable.
+// Returns response.data ({ success, message, data:{ booking } }).
+export async function cancelBooking(id) {
+  const response = await api.patch(`/bookings/${id}/cancel`);
+  return response.data;
+}
+
+// PATCH /bookings/:id — changes the number of devotees. totalAmount is never sent:
+// the server recalculates it from the slot price.
+// Returns response.data ({ success, message, data:{ booking } }).
+export async function modifyBooking(id, numberOfDevotees) {
+  const response = await api.patch(`/bookings/${id}`, { numberOfDevotees });
+  return response.data;
+}
