@@ -1,10 +1,10 @@
 import api from "./api";
 
 // POST /bookings — requires Bearer token (attached by api.js). totalAmount is never sent:
-// the server computes it from the slot price.
+// the server computes it (ticket price x devotees + donation). donationAmount is optional, IDR.
 // Returns response.data ({ success, message, data:{ booking } }).
-export async function createBooking({ slotId, numberOfDevotees }) {
-  const response = await api.post("/bookings", { slotId, numberOfDevotees });
+export async function createBooking({ slotId, numberOfDevotees, donationAmount = 0 }) {
+  const response = await api.post("/bookings", { slotId, numberOfDevotees, donationAmount });
   return response.data;
 }
 
