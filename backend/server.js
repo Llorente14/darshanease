@@ -1,26 +1,64 @@
 require("dotenv").config();
+
+const http = require("http");
 const express = require("express");
-const cors = require("cors");
 const helmet = require("helmet");
-const mongoose = require("mongoose");
+const cors = require("cors");
+
+const connectDB = require("./config/db");
+const globalLimiter = require("./middleware/rateLimiter");
+const errorHandler = require("./middleware/errorHandler");
+
+// Fail fast on missing required env vars
+if (!process.env.MONGO_URI) {
+  console.error("FATAL: MONGO_URI is missing. Set it in backend/.env");
+  process.exit(1);
+}
+if (!process.env.JWT_SECRET) {
+  console.error("FATAL: JWT_SECRET is missing. Set it in backend/.env");
+  process.exit(1);
+}
 
 const app = express();
 
-app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_URL }));
-app.use(express.json());
+// Render sits behind a proxy
+app.set("trust proxy", 1);
 
-app.get("/api/health", (req, res) => res.json({ status: "ok" }));
+// Security middleware
+app.use(helmet());
+app.use(
+  cors({
+    origin: (process.env.CLIENT_URL || "").split(",").filter(Boolean),
+  })
+);
+app.use(express.json({ limit: "10kb" }));
+
+// Global rate limiter for /api
+app.use("/api", globalLimiter);
+
+// Health check
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ success: true, message: "DarshanEase API is running" });
+});
+
+// 404 handler for unknown routes
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: `Route not found: ${req.originalUrl}` });
+});
+
+// Global error handler (must be last)
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
 
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log("MongoDB connected");
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  })
-  .catch((err) => {
-    console.error("MongoDB connection error:", err.message);
-    process.exit(1);
+connectDB().then(() => {
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
   });
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled Rejection:", err.message);
+  server.close(() => process.exit(1));
+});
