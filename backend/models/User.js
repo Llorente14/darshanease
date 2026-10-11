@@ -51,6 +51,12 @@ userSchema.pre("save", async function () {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
+// Compare a plaintext candidate against the stored bcrypt hash.
+// The caller MUST have queried with .select("+password") beforehand.
+userSchema.methods.comparePassword = async function (candidate) {
+  return bcrypt.compare(candidate, this.password);
+};
+
 // Remove password and __v from any JSON/object output
 const stripSensitive = (doc, ret) => {
   delete ret.password;
