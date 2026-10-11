@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import Button from "../components/Button";
@@ -144,6 +144,8 @@ export default function Register() {
   const [errors, setErrors] = useState({});
   const [generalError, setGeneralError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // Synchronous guard: state updates are async, a ref blocks same-tick double submits
+  const inFlight = useRef(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -160,7 +162,7 @@ export default function Register() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (submitting) return; // guard against double submit
+    if (submitting || inFlight.current) return; // guard against double submit
 
     // Validate every field first — never send an invalid request
     const nextErrors = {};
@@ -175,6 +177,7 @@ export default function Register() {
 
     setErrors({});
     setGeneralError("");
+    inFlight.current = true;
     setSubmitting(true);
     try {
       // Allowlist of fields — never send role or confirmPassword
@@ -221,6 +224,7 @@ export default function Register() {
         );
       }
     } finally {
+      inFlight.current = false;
       setSubmitting(false);
     }
   };
