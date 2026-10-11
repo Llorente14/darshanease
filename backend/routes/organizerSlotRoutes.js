@@ -17,8 +17,8 @@ const {
 
 const router = express.Router();
 
-// Every route here needs a signed-in organizer
-router.use(protect, authorize("organizer"));
+// Every route here needs a signed-in organizer or admin (admin sees all temples and slots)
+router.use(protect, authorize("organizer", "admin"));
 
 router.get("/", listSlotsValidator, validate, listMySlots);
 router.post("/", createSlotValidator, validate, createMySlot);
