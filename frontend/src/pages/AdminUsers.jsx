@@ -4,6 +4,7 @@ import { useAuth } from "../context/useAuth";
 import { getUsers, updateUser } from "../services/adminService";
 import Button from "../components/Button";
 import Footer from "../components/Footer";
+import StyledSelect from "../components/StyledSelect";
 import Topbar from "../components/Topbar";
 
 const ROLE_OPTIONS = [
@@ -14,8 +15,11 @@ const ROLE_OPTIONS = [
 
 const roleLabel = (role) => ROLE_OPTIONS.find((option) => option.value === role)?.label ?? role;
 
-const formatJoined = (createdAt) =>
-  new Date(createdAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+const formatJoined = (createdAt) => {
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+};
 
 function SpinnerIcon() {
   return (
@@ -184,17 +188,16 @@ export default function AdminUsers() {
               onChange={(event) => setSearch(event.target.value)}
             />
           </div>
-          <label className="field">
+          <span className="field" style={{ marginBottom: 0 }}>
             <span>Role</span>
-            <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
-              <option value="">All roles</option>
-              {ROLE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
+            <StyledSelect
+              label="Filter by role"
+              value={roleFilter}
+              options={[{ value: "", label: "All roles" }, ...ROLE_OPTIONS]}
+              onChange={setRoleFilter}
+              minWidth={130}
+            />
+          </span>
         </div>
 
         {visible.length === 0 ? (
@@ -227,22 +230,14 @@ export default function AdminUsers() {
                       </td>
                       <td>{item.phone}</td>
                       <td>
-                        <select
-                          aria-label={`Role for ${item.name}`}
+                        <StyledSelect
+                          label={`Role for ${item.name}`}
                           value={item.role}
+                          options={ROLE_OPTIONS}
                           disabled={isSelf || submitting}
-                          onChange={(event) => {
-                            if (event.target.value !== item.role) {
-                              openDialog({ type: "role", user: item, nextRole: event.target.value });
-                            }
-                          }}
-                        >
-                          {ROLE_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
+                          minWidth={120}
+                          onChange={(nextRole) => openDialog({ type: "role", user: item, nextRole })}
+                        />
                       </td>
                       <td>
                         <span className={`status ${item.isActive ? "status-success" : "status-danger"}`}>
