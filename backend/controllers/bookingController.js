@@ -2,6 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const {
   createBooking,
   getBookingForUser,
+  listBookingsForUser,
   toBookingDTO,
 } = require("../services/bookingService");
 const { generateTicketQR } = require("../services/ticketService");
@@ -40,4 +41,13 @@ const getBookingHandler = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createBookingHandler, getBookingHandler };
+const getMyBookingsHandler = asyncHandler(async (req, res) => {
+  const { upcoming, past } = await listBookingsForUser(req.user._id);
+  res.status(200).json({
+    success: true,
+    message: "OK",
+    data: { upcoming, past, count: upcoming.length + past.length },
+  });
+});
+
+module.exports = { createBookingHandler, getBookingHandler, getMyBookingsHandler };

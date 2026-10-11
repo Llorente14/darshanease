@@ -83,4 +83,35 @@ const getBookingForUser = async ({ bookingId, userId }) => {
   return booking;
 };
 
-module.exports = { createBooking, getBookingForUser, toBookingDTO };
+// Splits the user's bookings into upcoming and past. Cancelled/failed bookings always count as past.
+// Each list is sorted by slot date, then start time: upcoming nearest first, past most recent first.
+const listBookingsForUser = async (userId) => {
+  const bookings = await Booking.find({ user: userId })
+    .populate(SLOT_POPULATE)
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const now = new Date();
+  const upcoming = [];
+  const past = [];
+
+  for (const booking of bookings) {
+    // Skip bookings whose slot or temple was deleted; the DTO needs both
+    if (!booking.slot || !booking.slot.temple) continue;
+
+    const dto = toBookingDTO(booking);
+    const status = booking.status || "confirmed";
+    const isPast =
+      getSlotStatus(booking.slot, now) === "expired" || status === "cancelled" || status === "failed";
+    (isPast ? past : upcoming).push(dto);
+  }
+
+  const bySlotTime = (a, b) =>
+    a.slot.date.localeCompare(b.slot.date) || a.slot.startTime.localeCompare(b.slot.startTime);
+  upcoming.sort(bySlotTime);
+  past.sort((a, b) => bySlotTime(b, a));
+
+  return { upcoming, past };
+};
+
+module.exports = { createBooking, getBookingForUser, listBookingsForUser, toBookingDTO };
