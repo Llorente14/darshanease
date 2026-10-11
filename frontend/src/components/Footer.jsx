@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Logo } from "./Topbar";
 
 export default function Footer() {
@@ -9,7 +10,7 @@ export default function Footer() {
       </div>
       <div>
         <strong>Explore</strong>
-        <button type="button">Find darshan</button>
+        <Link to="/slots">Find darshan</Link>
         <button type="button">How it works</button>
       </div>
       <div>

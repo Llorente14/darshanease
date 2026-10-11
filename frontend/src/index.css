@@ -145,7 +145,7 @@ footer { padding: 55px max(6vw, 40px) 35px; background: #101a31; color: #9da9be;
 footer .logo { color: white; }
 footer > div > p { margin: 12px 0 0; font-size: 13px; }
 footer strong { color: white; display: block; font-size: 13px; margin-bottom: 11px; }
-footer button { border: 0; background: transparent; color: #9da9be; display: block; padding: 4px 0; font-size: 12px; }
+footer button, footer a { border: 0; background: transparent; color: #9da9be; display: block; padding: 4px 0; font-size: 12px; text-decoration: none; }
 footer > p { grid-column: 1/-1; border-top: 1px solid #2a354b; padding-top: 25px; margin: 20px 0 0; font-size: 11px; }
 
 .auth-page { padding-top: 72px; min-height: 100vh; display: grid; grid-template-columns: .9fr 1.1fr; }
@@ -246,6 +246,8 @@ footer > p { grid-column: 1/-1; border-top: 1px solid #2a354b; padding-top: 25px
 .slot-main > p { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 11px; margin: 5px 0 9px; }
 .slot-meta { display: flex; align-items: center; gap: 14px; font-size: 11px; color: #4b5870; }
 .slot-meta > span:first-child { display: flex; align-items: center; gap: 5px; }
+.slot-meta { flex-wrap: wrap; row-gap: 6px; }
+.slot-meta > span { white-space: nowrap; }
 .slot-price { text-align: right; min-width: 80px; }
 .slot-card.is-muted { background: var(--bg); box-shadow: none; }
 .slot-card.is-muted .slot-date span, .slot-card.is-muted .slot-date strong, .slot-card.is-muted .temple-link, .slot-card.is-muted .slot-price strong { color: var(--muted); }
@@ -495,6 +497,7 @@ td small { display: block; color: var(--muted); margin-top: 4px; }
   .mobile-menu { display: grid; }
   .top-actions { margin-left: auto; }
   .public-shell .top-actions .button { min-height: 36px; padding: 0 12px; font-size: 11px; }
+  .topbar-link { display: none; }
   .profile-button { padding: 0; }
   .profile-menu { position: fixed; right: 13px; top: 58px; }
   .sidebar { display: none; }
