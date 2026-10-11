@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   createMyTemple,
   deleteMyTemple,
@@ -9,6 +9,7 @@ import {
 import Button from "../components/Button";
 import FormInput from "../components/FormInput";
 import Footer from "../components/Footer";
+import OrganizerSlotsPanel from "../components/OrganizerSlotsPanel";
 import Topbar from "../components/Topbar";
 import { formatTimeRange } from "../utils/format";
 
@@ -162,6 +163,11 @@ function EyeIcon() {
 }
 
 export default function OrganizerTemples() {
+  // The active tab lives in the URL (?tab=slots), so a refresh keeps the same tab
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get("tab") === "slots" ? "slots" : "temples";
+  const selectTab = (next) => setSearchParams(next === "slots" ? { tab: "slots" } : {});
+
   const [retryCount, setRetryCount] = useState(0);
   const [notice, setNotice] = useState("");
 
@@ -380,136 +386,162 @@ export default function OrganizerTemples() {
         <div className="page-header">
           <div>
             <span className="eyebrow">Organizer</span>
-            <h1>My temples</h1>
-            <p>Create and update the temples devotees can book.</p>
+            <h1>Organizer dashboard</h1>
+            <p>Create and update the temples devotees can book, and manage their darshan slots.</p>
           </div>
         </div>
-        {notice && (
-          <div className="feedback success" role="status">
-            {notice}
-          </div>
-        )}
-
-        <div className="organizer-layout">
-          {/* minWidth 0: lets the single-column grid shrink below the table width on phones */}
-          <div style={{ minWidth: 0 }}>{listBody}</div>
-
-          <section className="form-card" style={{ minWidth: 0 }} ref={formRef}>
-            <div className="form-section-title">
-              <div>
-                <h2>{isEditing ? "Edit temple" : "Add temple"}</h2>
-              </div>
-              {isEditing && (
-                <Button variant="secondary" onClick={resetForm} disabled={saving}>
-                  Cancel edit
-                </Button>
-              )}
+        <div className="admin-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "temples"}
+            className={tab === "temples" ? "active" : ""}
+            onClick={() => selectTab("temples")}
+          >
+            Temples <span>{temples.length}</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "slots"}
+            className={tab === "slots" ? "active" : ""}
+            onClick={() => selectTab("slots")}
+          >
+            Slots
+          </button>
+        </div>
+        {tab === "temples" ? (
+          <>
+          {notice && (
+            <div className="feedback success" role="status">
+              {notice}
             </div>
+          )}
 
-            <form noValidate onSubmit={handleSubmit}>
-              <FormInput
-                label="Temple name"
-                name="templeName"
-                value={form.templeName}
-                onChange={setField("templeName")}
-                maxLength={100}
-                error={fieldErrors.templeName}
-              />
-              <FormInput
-                label="Location"
-                name="location"
-                value={form.location}
-                onChange={setField("location")}
-                maxLength={150}
-                error={fieldErrors.location}
-              />
-              <div className="two-col">
-                <FormInput
-                  label="Darshan start"
-                  name="darshanStartTime"
-                  type="time"
-                  value={form.darshanStartTime}
-                  onChange={setField("darshanStartTime")}
-                  error={fieldErrors.darshanStartTime}
-                />
-                <FormInput
-                  label="Darshan end"
-                  name="darshanEndTime"
-                  type="time"
-                  value={form.darshanEndTime}
-                  onChange={setField("darshanEndTime")}
-                  error={fieldErrors.darshanEndTime}
-                />
-              </div>
-              <label className="field" htmlFor="field-description">
-                <span>Description</span>
-                <textarea
-                  id="field-description"
-                  name="description"
-                  value={form.description}
-                  onChange={setField("description")}
-                  maxLength={2000}
-                  aria-invalid={fieldErrors.description ? "true" : undefined}
-                />
-                {fieldErrors.description && (
-                  <small className="field-error">{fieldErrors.description}</small>
+          <div className="organizer-layout">
+            {/* minWidth 0: lets the single-column grid shrink below the table width on phones */}
+            <div style={{ minWidth: 0 }}>{listBody}</div>
+
+            <section className="form-card" style={{ minWidth: 0 }} ref={formRef}>
+              <div className="form-section-title">
+                <div>
+                  <h2>{isEditing ? "Edit temple" : "Add temple"}</h2>
+                </div>
+                {isEditing && (
+                  <Button variant="secondary" onClick={resetForm} disabled={saving}>
+                    Cancel edit
+                  </Button>
                 )}
-              </label>
-              <FormInput
-                label="Image URL"
-                name="imageUrl"
-                type="url"
-                placeholder="https://res.cloudinary.com/..."
-                value={form.imageUrl}
-                onChange={setField("imageUrl")}
-                error={fieldErrors.imageUrl}
-              />
-              <div
-                className="image-preview"
-                style={safeImageStyle(form.imageUrl.trim())}
-                aria-hidden="true"
-              />
-              <FormInput
-                label="Offerings"
-                name="offerings"
-                placeholder="Comma separated, e.g. Rudrabhishek, Evening Aarti"
-                value={form.offerings}
-                onChange={setField("offerings")}
-                error={fieldErrors.offerings}
-              />
-              <div className="two-col">
-                <FormInput
-                  label="Latitude"
-                  name="latitude"
-                  inputMode="decimal"
-                  value={form.latitude}
-                  onChange={setField("latitude")}
-                  placeholder="25.3109"
-                  error={fieldErrors.latitude}
-                />
-                <FormInput
-                  label="Longitude"
-                  name="longitude"
-                  inputMode="decimal"
-                  value={form.longitude}
-                  onChange={setField("longitude")}
-                  placeholder="83.0107"
-                  error={fieldErrors.longitude}
-                />
               </div>
-              <small>Optional. Fill both or leave both empty.</small>
 
-              {formError && (
-                <p className="field-error" role="alert">
-                  {formError}
-                </p>
-              )}
-              <Button type="submit" className="wide" loading={saving}>
-                {isEditing ? "Save changes" : "Create temple"}
-              </Button>
-            </form>
-          </section>
-        </div>
+              <form noValidate onSubmit={handleSubmit}>
+                <FormInput
+                  label="Temple name"
+                  name="templeName"
+                  value={form.templeName}
+                  onChange={setField("templeName")}
+                  maxLength={100}
+                  error={fieldErrors.templeName}
+                />
+                <FormInput
+                  label="Location"
+                  name="location"
+                  value={form.location}
+                  onChange={setField("location")}
+                  maxLength={150}
+                  error={fieldErrors.location}
+                />
+                <div className="two-col">
+                  <FormInput
+                    label="Darshan start"
+                    name="darshanStartTime"
+                    type="time"
+                    value={form.darshanStartTime}
+                    onChange={setField("darshanStartTime")}
+                    error={fieldErrors.darshanStartTime}
+                  />
+                  <FormInput
+                    label="Darshan end"
+                    name="darshanEndTime"
+                    type="time"
+                    value={form.darshanEndTime}
+                    onChange={setField("darshanEndTime")}
+                    error={fieldErrors.darshanEndTime}
+                  />
+                </div>
+                <label className="field" htmlFor="field-description">
+                  <span>Description</span>
+                  <textarea
+                    id="field-description"
+                    name="description"
+                    value={form.description}
+                    onChange={setField("description")}
+                    maxLength={2000}
+                    aria-invalid={fieldErrors.description ? "true" : undefined}
+                  />
+                  {fieldErrors.description && (
+                    <small className="field-error">{fieldErrors.description}</small>
+                  )}
+                </label>
+                <FormInput
+                  label="Image URL"
+                  name="imageUrl"
+                  type="url"
+                  placeholder="https://res.cloudinary.com/..."
+                  value={form.imageUrl}
+                  onChange={setField("imageUrl")}
+                  error={fieldErrors.imageUrl}
+                />
+                <div
+                  className="image-preview"
+                  style={safeImageStyle(form.imageUrl.trim())}
+                  aria-hidden="true"
+                />
+                <FormInput
+                  label="Offerings"
+                  name="offerings"
+                  placeholder="Comma separated, e.g. Rudrabhishek, Evening Aarti"
+                  value={form.offerings}
+                  onChange={setField("offerings")}
+                  error={fieldErrors.offerings}
+                />
+                <div className="two-col">
+                  <FormInput
+                    label="Latitude"
+                    name="latitude"
+                    inputMode="decimal"
+                    value={form.latitude}
+                    onChange={setField("latitude")}
+                    placeholder="25.3109"
+                    error={fieldErrors.latitude}
+                  />
+                  <FormInput
+                    label="Longitude"
+                    name="longitude"
+                    inputMode="decimal"
+                    value={form.longitude}
+                    onChange={setField("longitude")}
+                    placeholder="83.0107"
+                    error={fieldErrors.longitude}
+                  />
+                </div>
+                <small>Optional. Fill both or leave both empty.</small>
+
+                {formError && (
+                  <p className="field-error" role="alert">
+                    {formError}
+                  </p>
+                )}
+                <Button type="submit" className="wide" loading={saving}>
+                  {isEditing ? "Save changes" : "Create temple"}
+                </Button>
+              </form>
+            </section>
+          </div>
+          </>
+        ) : (
+          <OrganizerSlotsPanel temples={temples} />
+        )}
       </main>
       <Footer />
 
