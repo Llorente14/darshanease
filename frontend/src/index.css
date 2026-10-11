@@ -215,6 +215,7 @@ footer > p { grid-column: 1/-1; border-top: 1px solid #2a354b; padding-top: 25px
 
 .filter-panel { display: grid; grid-template-columns: 1.4fr .8fr .8fr auto; gap: 12px; align-items: end; padding: 18px; background: white; border: 1px solid var(--line); border-radius: 13px; }
 .filter-panel label { margin: 0; }
+.slot-filters { grid-template-columns: 1.4fr .8fr auto; }
 .filter-panel select { height: 44px; font-size: 13px; }
 .list-toolbar { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 14px; }
 .list-toolbar p { margin: 0; color: var(--muted); font-size: 12px; }
