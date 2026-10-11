@@ -4,6 +4,7 @@ import { getTempleById } from "../services/slotService";
 import Button from "../components/Button";
 import Footer from "../components/Footer";
 import SlotCard from "../components/SlotCard";
+import TempleMap from "../components/TempleMap";
 import Topbar from "../components/Topbar";
 import { useSlotUpdates } from "../hooks/useSlotUpdates";
 import { formatTimeRange } from "../utils/format";
@@ -164,6 +165,46 @@ export default function TempleDetail() {
     );
   } else {
     const { temple, slots } = data;
+    // Coordinates are optional on the server (null until seeded or entered by an organizer)
+    const hasCoordinates =
+      Number.isFinite(temple.latitude) &&
+      Number.isFinite(temple.longitude) &&
+      Math.abs(temple.latitude) <= 90 &&
+      Math.abs(temple.longitude) <= 180;
+
+    const slotsSection = (
+      <>
+        <div className="section-title">
+          <h2>Upcoming darshan slots</h2>
+        </div>
+        {slots.length === 0 ? (
+          <div className="state-card">
+            <h2>No upcoming slots for this temple</h2>
+            <p>Check back later for new darshan slots.</p>
+          </div>
+        ) : (
+          <div className="slot-list">
+            {slots.map((slot) => (
+              <SlotCard
+                key={slot._id}
+                slot={slot}
+                footer={
+                  slot.status === "available" ? (
+                    <Button onClick={() => navigate(`/book/${slot._id}`)}>Book now</Button>
+                  ) : undefined
+                }
+              />
+            ))}
+          </div>
+        )}
+        <p>
+          <Link className="text-link" to={`/slots?templeId=${temple._id}`}>
+            View all slots for this temple
+          </Link>
+        </p>
+      </>
+    );
+
     body = (
       <>
         <section className="temple-hero">
@@ -208,34 +249,30 @@ export default function TempleDetail() {
           </div>
         </section>
 
-        <div className="section-title">
-          <h2>Upcoming darshan slots</h2>
-        </div>
-        {slots.length === 0 ? (
-          <div className="state-card">
-            <h2>No upcoming slots for this temple</h2>
-            <p>Check back later for new darshan slots.</p>
+        {hasCoordinates ? (
+          <div className="temple-content">
+            <div>{slotsSection}</div>
+            <aside className="map-card">
+              <TempleMap
+                latitude={temple.latitude}
+                longitude={temple.longitude}
+                name={temple.templeName}
+              />
+              <h3>{temple.templeName}</h3>
+              <p>{temple.location}</p>
+              <a
+                className="text-link"
+                href={`https://www.openstreetmap.org/?mlat=${temple.latitude}&mlon=${temple.longitude}#map=15/${temple.latitude}/${temple.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open in OpenStreetMap
+              </a>
+            </aside>
           </div>
         ) : (
-          <div className="slot-list">
-            {slots.map((slot) => (
-              <SlotCard
-                key={slot._id}
-                slot={slot}
-                footer={
-                  slot.status === "available" ? (
-                    <Button onClick={() => navigate(`/book/${slot._id}`)}>Book now</Button>
-                  ) : undefined
-                }
-              />
-            ))}
-          </div>
+          slotsSection
         )}
-        <p>
-          <Link className="text-link" to={`/slots?templeId=${temple._id}`}>
-            View all slots for this temple
-          </Link>
-        </p>
       </>
     );
   }
