@@ -192,6 +192,7 @@ footer > p { grid-column: 1/-1; border-top: 1px solid #2a354b; padding-top: 25px
 .status-warning { color: #ad6811; background: #fff3df; }
 .status-danger { color: #b53f48; background: #ffebed; }
 .status-neutral { color: #647188; background: #eef1f5; }
+.status-primary { color: var(--primary-dark); background: var(--primary-light); }
 .ticket-mini { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--navy); }
 .ticket-mini small { font-size: 9px; }
 .quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -234,6 +235,8 @@ footer > p { grid-column: 1/-1; border-top: 1px solid #2a354b; padding-top: 25px
 .slot-meta { display: flex; align-items: center; gap: 14px; font-size: 11px; color: #4b5870; }
 .slot-meta > span:first-child { display: flex; align-items: center; gap: 5px; }
 .slot-price { text-align: right; min-width: 80px; }
+.slot-card.is-muted { background: var(--bg); box-shadow: none; }
+.slot-card.is-muted .slot-date span, .slot-card.is-muted .slot-date strong, .slot-card.is-muted .temple-link, .slot-card.is-muted .slot-price strong { color: var(--muted); }
 .slot-price small { display: block; color: var(--muted); font-size: 9px; }
 .slot-price strong { color: var(--navy); font: 800 21px "Manrope"; }
 .live-note { padding: 15px 18px; margin-top: 16px; border-radius: 9px; background: var(--primary-soft); color: #5f6d84; font-size: 11px; display: flex; align-items: center; gap: 6px; }

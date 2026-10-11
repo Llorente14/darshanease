@@ -11,17 +11,39 @@ const dateFormatter = new Intl.DateTimeFormat(DATE_LOCALE, {
   year: "numeric",
 });
 
+const weekdayFormatter = new Intl.DateTimeFormat(DATE_LOCALE, { weekday: "short" });
+
+const monthFormatter = new Intl.DateTimeFormat(DATE_LOCALE, {
+  month: "short",
+  year: "numeric",
+});
+
 const priceFormatter = new Intl.NumberFormat("id-ID", {
   style: "currency",
   currency: "IDR",
   maximumFractionDigits: 0,
 });
 
-// "2026-10-12" -> "Monday, October 12, 2026" (local date built from parts)
+// "2026-10-12" -> local Date at midnight (built from parts, no UTC shift)
+function parseSlotDate(dateString) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+// "2026-10-12" -> "Monday, October 12, 2026"
 export function formatSlotDate(dateString) {
   if (!dateString) return "";
-  const [year, month, day] = dateString.split("-").map(Number);
-  return dateFormatter.format(new Date(year, month - 1, day));
+  return dateFormatter.format(parseSlotDate(dateString));
+}
+
+// "2026-10-12" -> { weekday: "Mon", day: "12", month: "Oct 2026" } for the date block
+export function formatSlotDateParts(dateString) {
+  const date = parseSlotDate(dateString);
+  return {
+    weekday: weekdayFormatter.format(date),
+    day: String(date.getDate()),
+    month: monthFormatter.format(date),
+  };
 }
 
 // ("06:00", "08:00") -> "06:00 - 08:00 WIB"
