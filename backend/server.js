@@ -24,10 +24,6 @@ const app = express();
 // Render sits behind a proxy
 app.set("trust proxy", 1);
 
-// Auth routes
-const authRoutes = require("./routes/authRoutes");
-app.use("/api/auth", authRoutes);
-
 // Security middleware
 app.use(helmet());
 app.use(
@@ -36,6 +32,9 @@ app.use(
   })
 );
 app.use(express.json({ limit: "10kb" }));
+
+// Routes
+app.use("/api/auth", require("./routes/authRoutes"));
 
 // Global rate limiter for /api
 app.use("/api", globalLimiter);
