@@ -83,4 +83,16 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { register, login };
+// @route   GET /api/auth/me
+// @desc    Return the currently authenticated user
+// @access  Private (protect middleware required)
+const getMe = asyncHandler(async (req, res) => {
+  // req.user is populated by the protect middleware; password is never selected.
+  res.status(200).json({
+    success: true,
+    message: "OK",
+    data: { user: req.user },
+  });
+});
+
+module.exports = { register, login, getMe };
