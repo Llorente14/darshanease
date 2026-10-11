@@ -1,6 +1,12 @@
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 const asyncHandler = require("../utils/asyncHandler");
+const bcrypt = require("bcryptjs");
+
+// Pre-computed dummy hash to run against when the email is not found.
+// This keeps the response time similar whether the email exists or not,
+// preventing user-enumeration via timing differences.
+const DUMMY_HASH = "$2a$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012345";
 
 // @route   POST /api/auth/register
 // @desc    Register a new devotee account
@@ -39,4 +45,42 @@ const register = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { register };
+// @route   POST /api/auth/login
+// @desc    Authenticate a user and return a JWT
+// @access  Public
+const login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  // Attempt to find the user, explicitly selecting the password field (select:false by default)
+  const user = await User.findOne({ email }).select("+password");
+
+  if (!user) {
+    // User not found — run a dummy compare to equalise timing (prevent user-enumeration)
+    await bcrypt.compare(password, DUMMY_HASH);
+    return res.status(401).json({
+      success: false,
+      message: "Invalid email or password",
+    });
+  }
+
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid email or password",
+    });
+  }
+
+  const token = generateToken(user._id, user.role);
+
+  // Convert to plain object so the schema transform removes password & __v
+  const userObj = user.toJSON();
+
+  res.status(200).json({
+    success: true,
+    message: "Login successful",
+    data: { user: userObj, token },
+  });
+});
+
+module.exports = { register, login };
