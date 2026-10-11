@@ -581,3 +581,12 @@ td small { display: block; color: var(--muted); margin-top: 4px; }
   .table-tools > div { width: 100%; }
   .table-tools .button { display: none; }
 }
+
+/* ---- Shared form components (USN-1) ---- */
+.field .input-wrap { position: relative; display: block; }
+.field .input-wrap input { padding-right: 42px; }
+.password-toggle { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: transparent; border-radius: 8px; color: var(--muted); padding: 0; }
+.password-toggle:hover { background: var(--primary-soft); color: var(--primary-dark); }
+.password-toggle:focus-visible { outline: 2px solid var(--primary-hover); outline-offset: 1px; }
+.loading-state { min-height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 14px; color: var(--muted); font-size: 13px; }
+.loading-state .spin svg { width: 30px; height: 30px; color: var(--primary-dark); }
