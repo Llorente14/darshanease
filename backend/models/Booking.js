@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { MAX_DONATION_IDR } = require("../utils/bookingPolicy");
 
 const bookingSchema = new mongoose.Schema(
   {
@@ -12,6 +13,7 @@ const bookingSchema = new mongoose.Schema(
       validate: Number.isInteger,
     },
     totalAmount: { type: Number, required: true, min: 0, validate: Number.isInteger }, // IDR, computed on server
+    donationAmount: { type: Number, default: 0, min: 0, max: MAX_DONATION_IDR, validate: Number.isInteger }, // IDR, optional
     bookingDate: { type: Date, default: Date.now },
     status: {
       type: String,
