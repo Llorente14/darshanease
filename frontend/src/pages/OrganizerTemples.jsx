@@ -391,9 +391,10 @@ export default function OrganizerTemples() {
         )}
 
         <div className="organizer-layout">
-          <div>{listBody}</div>
+          {/* minWidth 0: lets the single-column grid shrink below the table width on phones */}
+          <div style={{ minWidth: 0 }}>{listBody}</div>
 
-          <section className="form-card" ref={formRef}>
+          <section className="form-card" style={{ minWidth: 0 }} ref={formRef}>
             <div className="form-section-title">
               <div>
                 <h2>{isEditing ? "Edit temple" : "Add temple"}</h2>
