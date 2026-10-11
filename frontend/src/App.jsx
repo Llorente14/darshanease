@@ -9,6 +9,7 @@ import BookSlot from "./pages/BookSlot";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import MyBookings from "./pages/MyBookings";
 import OrganizerTemples from "./pages/OrganizerTemples";
+import AdminUsers from "./pages/AdminUsers";
 import ProtectedRoute, { SessionLoader } from "./components/ProtectedRoute";
 
 // "/" -> /dashboard when authenticated, otherwise /login
@@ -55,8 +56,11 @@ function App() {
         <Route path="/bookings" element={<MyBookings />} />
         <Route path="/bookings/:bookingId" element={<BookingConfirmation />} />
       </Route>
-      <Route element={<ProtectedRoute allowedRoles={["organizer"]} />}>
+      <Route element={<ProtectedRoute allowedRoles={["organizer", "admin"]} />}>
         <Route path="/organizer" element={<OrganizerTemples />} />
+      </Route>
+      <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+        <Route path="/admin" element={<AdminUsers />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

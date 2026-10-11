@@ -11,6 +11,7 @@ import FormInput from "../components/FormInput";
 import Footer from "../components/Footer";
 import OrganizerSlotsPanel from "../components/OrganizerSlotsPanel";
 import Topbar from "../components/Topbar";
+import { useAuth } from "../context/useAuth";
 import { formatTimeRange } from "../utils/format";
 
 const EMPTY_FORM = {
@@ -163,6 +164,9 @@ function EyeIcon() {
 }
 
 export default function OrganizerTemples() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
   // The active tab lives in the URL (?tab=slots), so a refresh keeps the same tab
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") === "slots" ? "slots" : "temples";
@@ -385,9 +389,10 @@ export default function OrganizerTemples() {
       <main className="slots-main">
         <div className="page-header">
           <div>
-            <span className="eyebrow">Organizer</span>
+            <span className="eyebrow">{isAdmin ? "Admin" : "Organizer"}</span>
             <h1>Organizer dashboard</h1>
             <p>Create and update the temples devotees can book, and manage their darshan slots.</p>
+            {isAdmin && <p>You are viewing every temple and slot as an admin.</p>}
           </div>
         </div>
         <div className="admin-tabs" role="tablist">

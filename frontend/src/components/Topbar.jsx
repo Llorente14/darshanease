@@ -71,9 +71,14 @@ export default function Topbar() {
           My Bookings
         </Link>
       )}
-      {user?.role === "organizer" && (
+      {(user?.role === "organizer" || user?.role === "admin") && (
         <Link className="topbar-link" to="/organizer">
           Organizer
+        </Link>
+      )}
+      {user?.role === "admin" && (
+        <Link className="topbar-link" to="/admin">
+          Admin
         </Link>
       )}
       <div className="top-search">
