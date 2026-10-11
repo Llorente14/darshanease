@@ -2,6 +2,7 @@ const Booking = require("../models/Booking");
 const DarshanSlot = require("../models/DarshanSlot");
 const { getSlotStatus } = require("../utils/dateTime");
 const { toBookingCode } = require("../utils/bookingCode");
+const { canChangeBooking } = require("../utils/bookingPolicy");
 const { reserveSeats, releaseSeats } = require("./seatService");
 
 const SLOT_POPULATE = {
@@ -25,6 +26,8 @@ const toBookingDTO = (booking) => ({
   bookingDate: booking.bookingDate,
   // Sprint 1 bookings have no status stored; .lean() skips schema defaults, so fall back here
   status: booking.status || "confirmed",
+  // Frontend reads this flag instead of repeating the cutoff rule
+  canChange: canChangeBooking(booking),
   slot: {
     _id: booking.slot._id,
     date: booking.slot.date.toISOString().slice(0, 10),
