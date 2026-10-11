@@ -33,11 +33,11 @@ app.use(
 );
 app.use(express.json({ limit: "10kb" }));
 
-// Routes
-app.use("/api/auth", require("./routes/authRoutes"));
-
 // Global rate limiter for /api
 app.use("/api", globalLimiter);
+
+// Routes
+app.use("/api/auth", require("./routes/authRoutes"));
 
 // Health check
 app.get("/api/health", (req, res) => {
