@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { createMyTemple, getMyTemples, updateMyTemple } from "../services/organizerService";
+import {
+  createMyTemple,
+  deleteMyTemple,
+  getMyTemples,
+  updateMyTemple,
+} from "../services/organizerService";
 import Button from "../components/Button";
 import FormInput from "../components/FormInput";
 import Footer from "../components/Footer";
@@ -117,6 +122,26 @@ function PencilIcon() {
   );
 }
 
+function TrashIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="m6 6 1 14h10l1-14" />
+    </svg>
+  );
+}
+
 function EyeIcon() {
   return (
     <svg
@@ -156,6 +181,11 @@ export default function OrganizerTemples() {
   const [saving, setSaving] = useState(false);
   const formRef = useRef(null);
 
+  // Delete dialog: the temple to delete, or null when closed
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [dialogError, setDialogError] = useState("");
+
   useEffect(() => {
     const controller = new AbortController();
     getMyTemples(controller.signal)
@@ -166,6 +196,49 @@ export default function OrganizerTemples() {
       });
     return () => controller.abort();
   }, [requestKey]);
+
+  // Escape closes the delete dialog, except while a request is in flight
+  useEffect(() => {
+    if (!deleteTarget) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape" && !deleting) {
+        setDeleteTarget(null);
+        setDialogError("");
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [deleteTarget, deleting]);
+
+  const openDelete = (temple) => {
+    setNotice("");
+    setDialogError("");
+    setDeleteTarget(temple);
+  };
+
+  const closeDelete = () => {
+    if (deleting) return;
+    setDeleteTarget(null);
+    setDialogError("");
+  };
+
+  const confirmDelete = async () => {
+    setDeleting(true);
+    setDialogError("");
+    try {
+      await deleteMyTemple(deleteTarget._id);
+      // If the deleted temple was open in the form, clear the form so it cannot be saved again
+      if (editingId === deleteTarget._id) resetForm();
+      setDeleteTarget(null);
+      setNotice("Temple deleted.");
+      setRetryCount((count) => count + 1);
+    } catch (err) {
+      // 409 means the temple still has darshan slots. The message stays in the dialog.
+      setDialogError(err.response?.data?.message || "Something went wrong. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const setField = (name) => (event) =>
     setForm((current) => ({ ...current, [name]: event.target.value }));
@@ -272,6 +345,13 @@ export default function OrganizerTemples() {
                         onClick={() => startEdit(temple)}
                       >
                         <PencilIcon />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Delete ${temple.templeName}`}
+                        onClick={() => openDelete(temple)}
+                      >
+                        <TrashIcon />
                       </button>
                       <Link
                         to={`/temples/${temple._id}`}
@@ -431,6 +511,46 @@ export default function OrganizerTemples() {
         </div>
       </main>
       <Footer />
+
+      {deleteTarget && (
+        <div className="modal-backdrop" onClick={closeDelete}>
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              className="modal-close"
+              type="button"
+              aria-label="Close"
+              onClick={closeDelete}
+              disabled={deleting}
+            >
+              ×
+            </button>
+            <h2 id="delete-title">Delete this temple?</h2>
+            <p>
+              {deleteTarget.templeName} · {deleteTarget.location}
+            </p>
+            <div className="modal-note">Temples that still have darshan slots cannot be deleted.</div>
+            {dialogError && (
+              <p className="field-error" role="alert">
+                {dialogError}
+              </p>
+            )}
+            <div className="modal-actions">
+              <Button variant="secondary" onClick={closeDelete} disabled={deleting}>
+                Keep temple
+              </Button>
+              <Button variant="danger" loading={deleting} onClick={confirmDelete}>
+                Delete temple
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
