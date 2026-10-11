@@ -15,6 +15,7 @@ import {
 } from "../utils/format";
 
 const MAX_DEVOTEES = 10;
+const MAX_DONATION = 10000000; // same upper bound as the server (Rp 10.000.000)
 
 // Shown under the confirm button when the slot cannot be booked
 const UNAVAILABLE_REASON = {
@@ -45,6 +46,24 @@ function ArrowLeftIcon() {
   );
 }
 
+function HeartIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+    </svg>
+  );
+}
+
 function SpinnerIcon() {
   return (
     <svg
@@ -67,6 +86,7 @@ export default function BookSlot() {
   const navigate = useNavigate();
   const [retryCount, setRetryCount] = useState(0);
   const [devotees, setDevotees] = useState(1);
+  const [donationInput, setDonationInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
@@ -106,7 +126,7 @@ export default function BookSlot() {
     setSubmitting(true);
     setSubmitError("");
     try {
-      const result = await createBooking({ slotId, numberOfDevotees: count });
+      const result = await createBooking({ slotId, numberOfDevotees: count, donationAmount: donation });
       navigate(`/bookings/${result.data.booking._id}`, { replace: true });
     } catch (err) {
       // 409 not enough seats, 400 slot ended, etc. The form stays usable.
@@ -118,7 +138,10 @@ export default function BookSlot() {
 
   const count = slot ? clampDevotees(devotees, slot.availableSeats) : devotees;
   const max = slot ? Math.min(MAX_DEVOTEES, slot.availableSeats) : MAX_DEVOTEES;
-  const canBook = slot?.status === "available" && !submitting;
+  // The input only holds digits, so this is always a whole number
+  const donation = Number(donationInput) || 0;
+  const donationTooHigh = donation > MAX_DONATION;
+  const canBook = slot?.status === "available" && !submitting && !donationTooHigh;
 
   let body;
   if (!isCurrent) {
@@ -212,6 +235,40 @@ export default function BookSlot() {
               </button>
             </div>
           </div>
+          <div className="divider" />
+          <div className="form-section-title">
+            <span>3</span>
+            <div>
+              <h2>Donation</h2>
+              <p>Optional contribution to the temple</p>
+            </div>
+          </div>
+          <div className="donation-field">
+            <span>
+              <HeartIcon />
+            </span>
+            <div>
+              <strong>Add a donation</strong>
+              <small>Optional · IDR, max {formatPrice(MAX_DONATION)}</small>
+            </div>
+            <div className="money-input">
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                aria-label="Donation amount in rupiah"
+                placeholder="0"
+                value={donationInput}
+                maxLength={8}
+                onChange={(e) => setDonationInput(e.target.value.replace(/\D/g, ""))}
+              />
+            </div>
+          </div>
+          {donationTooHigh && (
+            <p className="field-error" role="alert">
+              Maximum donation is {formatPrice(MAX_DONATION)}.
+            </p>
+          )}
         </section>
 
         <aside className="summary-card">
@@ -237,11 +294,17 @@ export default function BookSlot() {
               <span>Devotees</span>
               <strong>{count}</strong>
             </p>
+            {donation > 0 && (
+              <p>
+                <span>Donation</span>
+                <strong>{formatPrice(donation)}</strong>
+              </p>
+            )}
           </div>
-          {/* Display only. The server computes the real total from the slot price. */}
+          {/* Display only. The server computes the real total (tickets + donation). */}
           <div className="summary-total">
             <span>Total</span>
-            <strong>{formatPrice(slot.price * count)}</strong>
+            <strong>{formatPrice(slot.price * count + donation)}</strong>
           </div>
           <Button className="wide" loading={submitting} disabled={!canBook} onClick={handleConfirm}>
             Confirm booking
