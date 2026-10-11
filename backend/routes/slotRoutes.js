@@ -1,7 +1,7 @@
 const express = require("express");
-const { query } = require("express-validator");
+const { query, param } = require("express-validator");
 const validate = require("../middleware/validate"); // CEK: path & cara export validate middleware
-const { getSlots } = require("../controllers/slotController");
+const { getSlots, getSlot } = require("../controllers/slotController");
 
 const router = express.Router();
 
@@ -25,6 +25,13 @@ router.get(
   ],
   validate,
   getSlots
+);
+
+router.get(
+  "/:id",
+  [param("id").isMongoId().withMessage("id must be a valid id")],
+  validate,
+  getSlot
 );
 
 module.exports = router;
