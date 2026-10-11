@@ -13,6 +13,23 @@ const templeSchema = new mongoose.Schema(
     location: { type: String, required: true, trim: true },
     darshanStartTime: timeField,
     darshanEndTime: timeField,
+    description: {
+      type: String,
+      trim: true,
+      maxlength: [2000, "Description must be at most 2000 characters"],
+      default: "",
+    },
+    // Empty, or an https URL. Images are hosted externally (no upload here).
+    imageUrl: {
+      type: String,
+      trim: true,
+      default: "",
+      match: [/^(|https:\/\/[^\s"'()]+)$/, "imageUrl must be empty or an https URL without spaces or quotes"],
+    },
+    offerings: {
+      type: [{ type: String, trim: true, maxlength: 60 }],
+      default: [],
+    },
   },
   { timestamps: true }
 );
