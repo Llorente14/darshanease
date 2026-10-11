@@ -3,6 +3,8 @@ const {
   createBooking,
   getBookingForUser,
   listBookingsForUser,
+  cancelBooking,
+  modifyBooking,
   toBookingDTO,
 } = require("../services/bookingService");
 const { generateTicketQR } = require("../services/ticketService");
@@ -50,4 +52,32 @@ const getMyBookingsHandler = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createBookingHandler, getBookingHandler, getMyBookingsHandler };
+const cancelBookingHandler = asyncHandler(async (req, res) => {
+  const booking = await cancelBooking({ bookingId: req.params.id, userId: req.user._id });
+  res.status(200).json({
+    success: true,
+    message: "Booking cancelled",
+    data: { booking: toBookingDTO(booking) },
+  });
+});
+
+const modifyBookingHandler = asyncHandler(async (req, res) => {
+  const booking = await modifyBooking({
+    bookingId: req.params.id,
+    userId: req.user._id,
+    numberOfDevotees: req.body.numberOfDevotees,
+  });
+  res.status(200).json({
+    success: true,
+    message: "Booking updated",
+    data: { booking: toBookingDTO(booking) },
+  });
+});
+
+module.exports = {
+  createBookingHandler,
+  getBookingHandler,
+  getMyBookingsHandler,
+  cancelBookingHandler,
+  modifyBookingHandler,
+};
