@@ -109,8 +109,9 @@ export default function BookingConfirmation() {
   const [retryCount, setRetryCount] = useState(0);
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState("");
-  const autoPayStarted = useRef(false);
-  const expiryChecked = useRef(false);
+  // Keyed by booking id: the route keeps this component mounted when only the id changes
+  const autoPayFor = useRef(null);
+  const expiryCheckedFor = useRef(null);
   const opening = useRef(false);
 
   // Same pattern as the other pages: a response only counts when its key matches the current request
@@ -175,8 +176,8 @@ export default function BookingConfirmation() {
 
   // Arrived from the booking page with ?pay=1: open the popup once, then remove the query from the URL
   useEffect(() => {
-    if (!booking || autoPayStarted.current || searchParams.get("pay") !== "1") return;
-    autoPayStarted.current = true;
+    if (!booking || autoPayFor.current === bookingId || searchParams.get("pay") !== "1") return;
+    autoPayFor.current = bookingId;
     setSearchParams({}, { replace: true });
     // pay() only sets state after the Snap script has loaded (async), so no synchronous cascade
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -185,8 +186,8 @@ export default function BookingConfirmation() {
 
   // Window already over when the page opens: check the server once. The check button stays for later.
   useEffect(() => {
-    if (!booking || booking.status !== "pending" || !paymentWindowOver || expiryChecked.current) return;
-    expiryChecked.current = true;
+    if (!booking || booking.status !== "pending" || !paymentWindowOver || expiryCheckedFor.current === bookingId) return;
+    expiryCheckedFor.current = bookingId;
     checkStatus();
   });
 
