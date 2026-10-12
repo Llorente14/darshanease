@@ -127,7 +127,9 @@ export default function BookSlot() {
     setSubmitError("");
     try {
       const result = await createBooking({ slotId, numberOfDevotees: count, donationAmount: donation });
-      navigate(`/bookings/${result.data.booking._id}`, { replace: true });
+      const { _id, status } = result.data.booking;
+      // Pending bookings open the Snap popup on the confirmation page (?pay=1)
+      navigate(status === "pending" ? `/bookings/${_id}?pay=1` : `/bookings/${_id}`, { replace: true });
     } catch (err) {
       // 409 not enough seats, 400 slot ended, etc. The form stays usable.
       setSubmitError(err.response?.data?.message || "Booking failed. Please try again.");

@@ -36,3 +36,10 @@ export async function modifyBooking(id, numberOfDevotees) {
   const response = await api.patch(`/bookings/${id}`, { numberOfDevotees });
   return response.data;
 }
+
+// POST /bookings/:id/payment/sync — owner only. The server asks Midtrans for the latest status first.
+// Returns response.data ({ success, message, data:{ booking } }), same shape as getBookingById.
+export async function syncPayment(id) {
+  const response = await api.post(`/bookings/${id}/payment/sync`);
+  return response.data;
+}
