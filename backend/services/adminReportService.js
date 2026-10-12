@@ -93,8 +93,8 @@ const getTopTemples = async () => {
         revenue: { $sum: "$totalAmount" },
       },
     },
-    { $sort: { devotees: -1, bookings: -1 } },
-    { $limit: TOP_TEMPLES },
+    // Look up the temple before sorting and limiting. A group whose temple was deleted is dropped here,
+    // so the report still returns up to TOP_TEMPLES real temples.
     {
       $lookup: {
         from: Temple.collection.name,
@@ -104,6 +104,8 @@ const getTopTemples = async () => {
       },
     },
     { $unwind: "$temple" },
+    { $sort: { devotees: -1, bookings: -1 } },
+    { $limit: TOP_TEMPLES },
     {
       $project: {
         _id: 0,
