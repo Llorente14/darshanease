@@ -16,6 +16,10 @@ const STATUS_BADGE = {
 
 const MAX_DEVOTEES = 10;
 
+// "2026-10-12T10:55:15.987Z" -> "17:55" (WIB)
+const formatWibTime = (value) =>
+  new Date(value).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" });
+
 const statusBadge = (status) =>
   STATUS_BADGE[status] ?? { label: String(status ?? "Unknown"), tone: "status-neutral" };
 
@@ -94,6 +98,9 @@ function BookingCard({ booking, muted, onView, onPay, onCancel, onModify }) {
           </Button>
         )}
         {!muted && booking.status === "pending" && <Button onClick={onPay}>Pay now</Button>}
+        {!muted && booking.status === "pending" && booking.payment && (
+          <small>Pay before {formatWibTime(booking.payment.expiresAt)} WIB</small>
+        )}
         {!muted && booking.status !== "pending" && !booking.canChange && <small>Changes closed</small>}
       </div>
     </article>
