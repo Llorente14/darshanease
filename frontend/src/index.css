@@ -221,6 +221,8 @@ footer > p { grid-column: 1/-1; border-top: 1px solid #2a354b; padding-top: 25px
 .slot-filters { grid-template-columns: 1.4fr .8fr auto; }
 .filter-panel select { height: 44px; font-size: 13px; }
 .list-toolbar { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 14px; }
+.slots-banner { height: 180px; border-radius: 16px; background: url("/assets/temple-detail.jpg") center 48%/cover; margin-bottom: 24px; box-shadow: 0 14px 40px rgba(29,48,88,.09); }
+@media (max-width: 760px) { .slots-banner { height: 130px; border-radius: 12px; } }
 .slots-main { max-width: 1180px; margin: 0 auto; padding: 112px clamp(16px, 4vw, 48px) 60px; }
 .slot-list.slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 14px; }
 .skeleton-block { background: var(--line); border-radius: 6px; animation: skeleton-pulse 1.4s ease-in-out infinite; }

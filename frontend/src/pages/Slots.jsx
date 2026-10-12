@@ -222,6 +222,7 @@ export default function Slots() {
     <div className="public-shell">
       <Topbar />
       <main className="slots-main">
+        <div className="slots-banner" role="img" aria-label="Temple banner" />
         <div className="page-header">
           <div>
             <span className="eyebrow">Darshan slots</span>
