@@ -4,6 +4,11 @@ const CHANGE_CUTOFF_HOURS = 24;
 
 const MAX_DONATION_IDR = 10000000; // upper bound for a donation per booking (Rp 10.000.000)
 
+// Snap payment window for a pending booking. Unpaid bookings are failed and their seats released after it.
+const PAYMENT_TIMEOUT_MINUTES = 15;
+// Extra wait after the window before the sweeper gives up on a booking Midtrans has never seen.
+const PAYMENT_SWEEP_GRACE_MINUTES = 5;
+
 const CHANGE_NOT_ALLOWED_MESSAGE = `Bookings can only be changed up to ${CHANGE_CUTOFF_HOURS} hours before the darshan starts`;
 
 // date: Date (stored at 00:00Z of the WIB calendar date) or "YYYY-MM-DD"; startTime: "HH:mm" WIB
@@ -19,4 +24,12 @@ const canChangeBooking = (booking, now = new Date()) => {
   return msUntilStart >= CHANGE_CUTOFF_HOURS * 3600 * 1000;
 };
 
-module.exports = { CHANGE_CUTOFF_HOURS, MAX_DONATION_IDR, CHANGE_NOT_ALLOWED_MESSAGE, getSlotStart, canChangeBooking };
+module.exports = {
+  CHANGE_CUTOFF_HOURS,
+  MAX_DONATION_IDR,
+  PAYMENT_TIMEOUT_MINUTES,
+  PAYMENT_SWEEP_GRACE_MINUTES,
+  CHANGE_NOT_ALLOWED_MESSAGE,
+  getSlotStart,
+  canChangeBooking,
+};

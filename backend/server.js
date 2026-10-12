@@ -19,6 +19,10 @@ if (!process.env.JWT_SECRET) {
   console.error("FATAL: JWT_SECRET is missing. Set it in backend/.env");
   process.exit(1);
 }
+if (!process.env.MIDTRANS_SERVER_KEY) {
+  console.error("FATAL: MIDTRANS_SERVER_KEY is missing. Set it in backend/.env");
+  process.exit(1);
+}
 
 const app = express();
 
