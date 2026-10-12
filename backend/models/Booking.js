@@ -20,10 +20,14 @@ const bookingSchema = new mongoose.Schema(
       enum: ["pending", "confirmed", "cancelled", "failed"],
       default: "confirmed",
     },
+    snapToken: { type: String, default: "" },
+    paymentExpiresAt: { type: Date },
   },
   { timestamps: true }
 );
 
 bookingSchema.index({ user: 1, createdAt: -1 });
+// Used by the payment sweeper to find pending bookings whose payment window has passed
+bookingSchema.index({ status: 1, paymentExpiresAt: 1 });
 
 module.exports = mongoose.model("Booking", bookingSchema);

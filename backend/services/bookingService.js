@@ -201,6 +201,7 @@ const modifyBooking = async ({ bookingId, userId, numberOfDevotees }) => {
 };
 
 module.exports = {
+  SLOT_POPULATE,
   createBooking,
   getBookingForUser,
   listBookingsForUser,
