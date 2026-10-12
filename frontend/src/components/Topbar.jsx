@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import NotificationMenu from "./NotificationMenu";
 
@@ -18,8 +19,81 @@ export function Logo() {
   );
 }
 
+const SEARCH_MAX_LENGTH = 50;
+
+function SearchIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}
+
+// Navbar search. Keyed by the URL's q on /slots, so the input always starts from the URL and
+// follows it when the URL changes. Typed text is only sent when the form is submitted.
+function TopSearch({ onSlots, urlQuery }) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [value, setValue] = useState(urlQuery);
+
+  // On /slots the date and temple filters are kept; anywhere else the search starts fresh
+  const goToSearch = (term) => {
+    const params = onSlots ? new URLSearchParams(searchParams) : new URLSearchParams();
+    if (term) params.set("q", term);
+    else params.delete("q");
+    const query = params.toString();
+    navigate(query ? `/slots?${query}` : "/slots");
+  };
+
+  const onSubmit = (event) => {
+    event.preventDefault();
+    goToSearch(value.trim());
+  };
+
+  // Clearing only touches the URL when a search is active on /slots
+  const clear = () => {
+    setValue("");
+    if (onSlots && urlQuery) goToSearch("");
+  };
+
+  return (
+    <form className="top-search" role="search" onSubmit={onSubmit}>
+      <SearchIcon />
+      <input
+        aria-label="Search"
+        placeholder="Search temple, city, or offering..."
+        maxLength={SEARCH_MAX_LENGTH}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") clear();
+        }}
+      />
+      {value && (
+        <button type="button" className="search-clear" aria-label="Clear search" onClick={clear}>
+          ×
+        </button>
+      )}
+    </form>
+  );
+}
+
 export default function Topbar() {
   const { user } = useAuth();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const onSlots = location.pathname === "/slots";
+  const urlQuery = onSlots ? (searchParams.get("q") ?? "") : "";
   const initials = user?.name
     ? user.name
         .trim()
@@ -69,25 +143,7 @@ export default function Topbar() {
           Admin
         </Link>
       )}
-      <div className="top-search">
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          aria-hidden="true"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.3-4.3" />
-        </svg>
-        <input
-          aria-label="Search"
-          placeholder="Search temples, locations, bookings..."
-        />
-      </div>
+      <TopSearch key={`${onSlots}|${urlQuery}`} onSlots={onSlots} urlQuery={urlQuery} />
       <div className="top-actions">
         <NotificationMenu key={user?._id ?? "guest"} />
         {user ? (

@@ -98,17 +98,19 @@ export default function Slots() {
   const rawDate = searchParams.get("date") ?? "";
   const templeId = ID_PATTERN.test(rawTempleId) ? rawTempleId : "";
   const date = isValidDate(rawDate) ? rawDate : "";
-  const hasFilters = Boolean(templeId || date);
+  // Search term from the navbar: trimmed and capped at the API limit (50 characters)
+  const q = (searchParams.get("q") ?? "").trim().slice(0, 50);
+  const hasFilters = Boolean(templeId || date || q);
 
   const [temples, setTemples] = useState([]);
   const [retryCount, setRetryCount] = useState(0);
   // Responses are stored with the key they were requested for. Anything whose key no longer
   // matches the current filters is ignored, so a late response never shows as current data.
   const [response, setResponse] = useState({ key: null, slots: [], failed: false });
-  const requestKey = `${templeId}|${date}|${retryCount}`;
+  const requestKey = `${templeId}|${date}|${q}|${retryCount}`;
   const isCurrent = response.key === requestKey;
   // Page is remembered per filter set; changing the filters starts again at page 1
-  const filterKey = `${templeId}|${date}`;
+  const filterKey = `${templeId}|${date}|${q}`;
   const [pageState, setPageState] = useState({ key: null, page: 1 });
 
   // Realtime: patch only the matching slot in place. No refetch, and _id keys stay the same.
@@ -132,7 +134,7 @@ export default function Slots() {
 
   useEffect(() => {
     const controller = new AbortController();
-    getSlots({ date, templeId }, controller.signal)
+    getSlots({ date, templeId, q }, controller.signal)
       .then((result) => {
         setResponse({ key: requestKey, slots: result.data?.slots ?? [], failed: false });
       })
@@ -142,17 +144,19 @@ export default function Slots() {
         setResponse({ key: requestKey, slots: [], failed: true });
       });
     return () => controller.abort();
-  }, [requestKey, date, templeId]);
+  }, [requestKey, date, templeId, q]);
 
   const applyFilters = (changes) => {
-    const next = { templeId, date, ...changes };
+    const next = { templeId, date, q, ...changes };
     const params = new URLSearchParams();
     if (next.templeId) params.set("templeId", next.templeId);
     if (next.date) params.set("date", next.date);
+    if (next.q) params.set("q", next.q);
     setSearchParams(params);
   };
 
-  const clearFilters = () => applyFilters({ templeId: "", date: "" });
+  const clearFilters = () => applyFilters({ templeId: "", date: "", q: "" });
+  const clearSearch = () => applyFilters({ q: "" });
   const retry = () => setRetryCount((count) => count + 1);
 
   const loading = !isCurrent;
@@ -183,6 +187,19 @@ export default function Slots() {
         title="We could not load slots"
         body="Please check your connection and try again."
         action={<Button onClick={retry}>Try again</Button>}
+      />
+    );
+  } else if (slots.length === 0 && q) {
+    content = (
+      <StateCard
+        icon={<CalendarIcon />}
+        title={`No temples match "${q}"`}
+        body="Try a temple name, a city, or an offering."
+        action={
+          <Button variant="secondary" onClick={clearSearch}>
+            Clear search
+          </Button>
+        }
       />
     );
   } else if (slots.length === 0) {
@@ -245,9 +262,19 @@ export default function Slots() {
             ) : failed ? (
               "Slots unavailable"
             ) : (
-              <>
-                <strong>{slots.length}</strong> {slots.length === 1 ? "darshan slot" : "darshan slots"} found
-              </>
+              q ? (
+                <>
+                  Results for &quot;{q}&quot; (<strong>{slots.length}</strong>{" "}
+                  {slots.length === 1 ? "slot" : "slots"}){" "}
+                  <button type="button" className="text-link" onClick={clearSearch}>
+                    Clear search
+                  </button>
+                </>
+              ) : (
+                <>
+                  <strong>{slots.length}</strong> {slots.length === 1 ? "darshan slot" : "darshan slots"} found
+                </>
+              )
             )}
           </p>
         </div>

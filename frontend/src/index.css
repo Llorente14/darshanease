@@ -50,6 +50,7 @@ a.button, a.profile-button, .logo-button, .back-link { text-decoration: none; }
 .top-search { height: 42px; width: min(400px, 34vw); display: flex; align-items: center; gap: 10px; padding: 0 14px; background: var(--bg); border: 1px solid transparent; border-radius: 10px; color: #8892a5; }
 .top-search:focus-within { background: white; border-color: var(--primary-hover); box-shadow: 0 0 0 3px var(--primary-soft); }
 .top-search input { border: 0; outline: 0; background: transparent; width: 100%; font-size: 14px; }
+.search-clear { border: 0; background: transparent; color: #8892a5; font-size: 18px; line-height: 1; padding: 0 2px; cursor: pointer; }
 .top-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 .icon-button, .mobile-menu { width: 40px; height: 40px; display: grid; place-items: center; border: 0; background: transparent; border-radius: 10px; }
 .icon-button:hover, .mobile-menu:hover { background: var(--bg); }
