@@ -13,13 +13,14 @@ import AdminUsers from "./pages/AdminUsers";
 import ProtectedRoute, { SessionLoader } from "./components/ProtectedRoute";
 
 // "/" -> /dashboard when authenticated, otherwise /login
+// "/" -> /dashboard when logged in, otherwise the public darshan slot list (guests browse before signing in)
 function IndexRedirect() {
   const { token, loading } = useAuth();
   if (loading) return <SessionLoader />;
   return token ? (
     <Navigate to="/dashboard" replace />
   ) : (
-    <Navigate to="/login" replace />
+    <Navigate to="/slots" replace />
   );
 }
 

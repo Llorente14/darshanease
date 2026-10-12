@@ -243,9 +243,9 @@ export default function Register() {
           </div>
         </div>
         <div className="auth-panel">
-          <Link className="back-link" to="/">
+          <Link className="back-link" to="/slots">
             <ArrowLeftIcon />
-            Back to home
+            Browse darshan slots
           </Link>
           <form className="auth-form" onSubmit={handleSubmit} noValidate>
             <span className="eyebrow">Join DarshanEase</span>
