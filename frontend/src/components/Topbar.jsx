@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import NotificationMenu from "./NotificationMenu";
@@ -20,6 +20,7 @@ export function Logo() {
 }
 
 const SEARCH_MAX_LENGTH = 50;
+const SEARCH_DEBOUNCE_MS = 300;
 
 function SearchIcon() {
   return (
@@ -39,31 +40,41 @@ function SearchIcon() {
   );
 }
 
-// Navbar search. Keyed by the URL's q on /slots, so the input always starts from the URL and
-// follows it when the URL changes. Typed text is only sent when the form is submitted.
+// The /slots URL for a search term. Other filters (date, temple) are kept only when they are in the current query.
+const searchUrl = (currentSearch, term) => {
+  const params = new URLSearchParams(currentSearch);
+  if (term) params.set("q", term);
+  else params.delete("q");
+  const query = params.toString();
+  return query ? `/slots?${query}` : "/slots";
+};
+
+// Navbar search. On /slots it filters live, like the filter bar: the list follows the input after a short pause.
+// Elsewhere the search is sent on submit and opens /slots.
 function TopSearch({ onSlots, urlQuery }) {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [value, setValue] = useState(urlQuery);
+  const [seenUrlQuery, setSeenUrlQuery] = useState(urlQuery);
 
-  // On /slots the date and temple filters are kept; anywhere else the search starts fresh
-  const goToSearch = (term) => {
-    const params = onSlots ? new URLSearchParams(searchParams) : new URLSearchParams();
-    if (term) params.set("q", term);
-    else params.delete("q");
-    const query = params.toString();
-    navigate(query ? `/slots?${query}` : "/slots");
-  };
+  // The URL changed from outside (filter bar, another page): follow it, unless the input already says the same
+  if (urlQuery !== seenUrlQuery) {
+    setSeenUrlQuery(urlQuery);
+    if (urlQuery !== value.trim()) setValue(urlQuery);
+  }
+
+  useEffect(() => {
+    if (!onSlots) return undefined;
+    const term = value.trim();
+    if (term === urlQuery) return undefined;
+    const timer = setTimeout(() => {
+      navigate(searchUrl(window.location.search, term), { replace: true });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [value, urlQuery, onSlots, navigate]);
 
   const onSubmit = (event) => {
     event.preventDefault();
-    goToSearch(value.trim());
-  };
-
-  // Clearing only touches the URL when a search is active on /slots
-  const clear = () => {
-    setValue("");
-    if (onSlots && urlQuery) goToSearch("");
+    navigate(searchUrl(onSlots ? window.location.search : "", value.trim()), { replace: onSlots });
   };
 
   return (
@@ -76,11 +87,11 @@ function TopSearch({ onSlots, urlQuery }) {
         value={value}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={(event) => {
-          if (event.key === "Escape") clear();
+          if (event.key === "Escape") setValue("");
         }}
       />
       {value && (
-        <button type="button" className="search-clear" aria-label="Clear search" onClick={clear}>
+        <button type="button" className="search-clear" aria-label="Clear search" onClick={() => setValue("")}>
           ×
         </button>
       )}
@@ -143,7 +154,7 @@ export default function Topbar() {
           Admin
         </Link>
       )}
-      <TopSearch key={`${onSlots}|${urlQuery}`} onSlots={onSlots} urlQuery={urlQuery} />
+      <TopSearch onSlots={onSlots} urlQuery={urlQuery} />
       <div className="top-actions">
         <NotificationMenu key={user?._id ?? "guest"} />
         {user ? (
