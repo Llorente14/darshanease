@@ -15,3 +15,9 @@ export async function updateUser(id, payload) {
   const response = await api.patch(`/admin/users/${id}`, payload);
   return response.data;
 }
+
+// GET /admin/reports — aggregated numbers for the reports tab. Returns response.data ({ data:{ summary, ... } }).
+export async function getReports(signal) {
+  const response = await api.get("/admin/reports", { signal });
+  return response.data;
+}
