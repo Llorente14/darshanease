@@ -50,6 +50,8 @@ app.use("/api/slots", require("./routes/slotRoutes"));
 
 app.use("/api/bookings", require("./routes/bookingRoutes"));
 
+app.use("/api/payments", require("./routes/paymentRoutes"));
+
 app.use("/api/organizer/temples", require("./routes/organizerTempleRoutes"));
 
 app.use("/api/organizer/slots", require("./routes/organizerSlotRoutes"));
