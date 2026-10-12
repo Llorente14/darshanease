@@ -1,4 +1,5 @@
 const DarshanSlot = require("../models/DarshanSlot");
+const { findTempleIdsMatching } = require("../utils/templeSearch");
 const { getTodayWIB, dateStringToUTCDate, getSlotStatus } = require("../utils/dateTime");
 
 const SLOT_SELECT = "date startTime endTime availableSeats price temple";
@@ -16,12 +17,24 @@ const toSlotDTO = (s, now) => ({
   temple: s.temple,
 });
 
-const listSlots = async ({ date, templeId } = {}) => {
+const listSlots = async ({ date, templeId, q } = {}) => {
   const filter = {};
   filter.date = date
     ? dateStringToUTCDate(date)
     : { $gte: dateStringToUTCDate(getTodayWIB()) };
-  if (templeId) filter.temple = templeId;
+  if (q) {
+    const matchingIds = (await findTempleIdsMatching(q)).map(String);
+    if (matchingIds.length === 0) return [];
+    if (templeId) {
+      // A temple filter outside the search results can never match, so skip the slot query
+      if (!matchingIds.includes(String(templeId))) return [];
+      filter.temple = templeId;
+    } else {
+      filter.temple = { $in: matchingIds };
+    }
+  } else if (templeId) {
+    filter.temple = templeId;
+  }
 
   const slots = await DarshanSlot.find(filter)
     .select(SLOT_SELECT)

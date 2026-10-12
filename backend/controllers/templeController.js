@@ -2,7 +2,7 @@ const asyncHandler = require("../utils/asyncHandler"); // CEK: kalau export-nya 
 const { listTemples, getTempleDetail } = require("../services/templeService");
 
 const getTemples = asyncHandler(async (req, res) => {
-  const temples = await listTemples();
+  const temples = await listTemples({ q: req.query.q });
   res.status(200).json({ success: true, message: "OK", data: { temples } });
 });
 

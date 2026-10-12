@@ -2,6 +2,7 @@ const express = require("express");
 const { query, param } = require("express-validator");
 const validate = require("../middleware/validate"); // CEK: path & cara export validate middleware
 const { getSlots, getSlot } = require("../controllers/slotController");
+const { searchQueryValidator } = require("../middleware/validators/searchValidator");
 
 const router = express.Router();
 
@@ -22,6 +23,7 @@ router.get(
       .bail()
       .custom(isRealDate),
     query("templeId").optional().isMongoId().withMessage("templeId must be a valid id"),
+    searchQueryValidator,
   ],
   validate,
   getSlots

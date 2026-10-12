@@ -1,12 +1,16 @@
 const Temple = require("../models/Temple");
 const DarshanSlot = require("../models/DarshanSlot");
 const { listSlots } = require("./slotService");
+const { findTempleIdsMatching } = require("../utils/templeSearch");
 
-const listTemples = () =>
-  Temple.find()
+const listTemples = async ({ q } = {}) => {
+  // Same matching rule as GET /slots?q=; without q every temple is returned
+  const filter = q ? { _id: { $in: await findTempleIdsMatching(q) } } : {};
+  return Temple.find(filter)
     .select("_id templeName location darshanStartTime darshanEndTime")
     .sort({ templeName: 1 })
     .lean();
+};
 
 // Temples seeded before USN-10 have no description, imageUrl or offerings stored.
 // .lean() skips schema defaults, so the fallbacks live here.
