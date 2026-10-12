@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { getUsers, updateUser } from "../services/adminService";
 import Button from "../components/Button";
@@ -56,8 +56,15 @@ function SearchIcon() {
   );
 }
 
+// Recharts is only downloaded when the Reports tab is opened
+const AdminReportsPanel = lazy(() => import("../components/AdminReportsPanel"));
+
 export default function AdminUsers() {
   const { user: me } = useAuth();
+  // The active tab lives in the URL (?tab=reports), so a refresh keeps the same tab
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get("tab") === "reports" ? "reports" : "users";
+  const selectTab = (next) => setSearchParams(next === "reports" ? { tab: "reports" } : {});
   const [retryCount, setRetryCount] = useState(0);
   const [notice, setNotice] = useState("");
   const [search, setSearch] = useState("");
@@ -309,12 +316,46 @@ export default function AdminUsers() {
             </Link>
           </div>
         </div>
-        {notice && (
-          <div className="feedback success" role="status">
-            {notice}
-          </div>
+        <div className="admin-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "users"}
+            className={tab === "users" ? "active" : ""}
+            onClick={() => selectTab("users")}
+          >
+            Users
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "reports"}
+            className={tab === "reports" ? "active" : ""}
+            onClick={() => selectTab("reports")}
+          >
+            Reports
+          </button>
+        </div>
+        {tab === "users" ? (
+          <>
+            {notice && (
+              <div className="feedback success" role="status">
+                {notice}
+              </div>
+            )}
+            {body}
+          </>
+        ) : (
+          <Suspense
+            fallback={
+              <div className="state-card">
+                <h2>Loading reports</h2>
+              </div>
+            }
+          >
+            <AdminReportsPanel />
+          </Suspense>
         )}
-        {body}
       </main>
       <Footer />
 
