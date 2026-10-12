@@ -183,8 +183,9 @@ export default function AdminReportsPanel() {
         <div className="analytics-grid">
           <section className="chart-card" style={{ minWidth: 0 }}>
             <div className="chart-head">
-              <h2>Bookings, last 14 days</h2>
+              <h2>Bookings created, last 14 days</h2>
             </div>
+            <small>All statuses. Revenue figures count confirmed bookings only.</small>
             {!hasDailyBookings && <small>No bookings in the last 14 days.</small>}
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={dailyBookings} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -200,7 +201,7 @@ export default function AdminReportsPanel() {
                   cursor={{ fill: "var(--primary-soft)" }}
                   labelFormatter={formatDailyLabel}
                   formatter={(value, name, item) => [
-                    `${value} · ${formatPrice(item.payload.revenue)}`,
+                    `${value} · Confirmed revenue ${formatPrice(item.payload.revenue)}`,
                     "Bookings",
                   ]}
                   contentStyle={{ border: "1px solid var(--line)", borderRadius: 8, fontSize: 12 }}
@@ -281,7 +282,7 @@ export default function AdminReportsPanel() {
             </div>
           </section>
 
-          <section className="chart-card demographics" style={{ minWidth: 0 }}>
+          <section className="chart-card" style={{ minWidth: 0 }}>
             <div className="chart-head">
               <h2>Devotee demographics</h2>
             </div>
