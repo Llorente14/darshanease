@@ -1,8 +1,13 @@
 const Booking = require("../models/Booking");
 const DarshanSlot = require("../models/DarshanSlot");
+const User = require("../models/User");
 const { getSlotStatus } = require("../utils/dateTime");
 const { toBookingCode } = require("../utils/bookingCode");
-const { canChangeBooking, CHANGE_NOT_ALLOWED_MESSAGE } = require("../utils/bookingPolicy");
+const {
+  canChangeBooking,
+  CHANGE_NOT_ALLOWED_MESSAGE,
+  PAYMENT_TIMEOUT_MINUTES,
+} = require("../utils/bookingPolicy");
 const { reserveSeats, releaseSeats } = require("./seatService");
 
 const SLOT_POPULATE = {
@@ -30,6 +35,9 @@ const toBookingDTO = (booking) => ({
   status: booking.status || "confirmed",
   // Frontend reads this flag instead of repeating the cutoff rule
   canChange: canChangeBooking(booking),
+  // Only pending bookings need a Snap popup. The frontend opens it with snapToken.
+  payment:
+    booking.status === "pending" ? { snapToken: booking.snapToken, expiresAt: booking.paymentExpiresAt } : null,
   slot: {
     _id: booking.slot._id,
     date: booking.slot.date.toISOString().slice(0, 10),
@@ -60,6 +68,11 @@ const createBooking = async ({ userId, slotId, numberOfDevotees, donationAmount 
   // totalAmount = price x devotees + donation, always computed on the server
   const totalAmount = reserved.price * numberOfDevotees + donationAmount;
 
+  // Free bookings are confirmed at once. Paid bookings wait until Midtrans reports the payment.
+  const status = totalAmount > 0 ? "pending" : "confirmed";
+  const paymentExpiresAt =
+    status === "pending" ? new Date(Date.now() + PAYMENT_TIMEOUT_MINUTES * 60 * 1000) : undefined;
+
   let booking;
   try {
     booking = await Booking.create({
@@ -68,6 +81,8 @@ const createBooking = async ({ userId, slotId, numberOfDevotees, donationAmount 
       numberOfDevotees,
       donationAmount,
       totalAmount,
+      status,
+      paymentExpiresAt,
     });
   } catch (err) {
     // Roll back the seats. Log a failed rollback but rethrow the original error.
@@ -75,6 +90,20 @@ const createBooking = async ({ userId, slotId, numberOfDevotees, donationAmount 
       console.error("Seat rollback failed:", rollbackErr.message)
     );
     throw err;
+  }
+
+  if (status === "pending") {
+    // Required here, not at the top: paymentService requires this file, so a top-level require would loop
+    const { createSnapTransaction, failPendingBooking } = require("./paymentService");
+    const user = await User.findById(userId).lean();
+    try {
+      const { token } = await createSnapTransaction({ booking, user });
+      await Booking.updateOne({ _id: booking._id }, { $set: { snapToken: token } });
+    } catch (err) {
+      // No payment page for the user, so the booking cannot be paid. Free the seats now.
+      await failPendingBooking(booking._id);
+      throw httpError(502, "Payment service is unavailable. Please try again.");
+    }
   }
 
   return Booking.findById(booking._id).populate(SLOT_POPULATE).lean();

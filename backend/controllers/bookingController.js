@@ -25,10 +25,14 @@ const createBookingHandler = asyncHandler(async (req, res) => {
     data: { booking: dto },
   });
 
+  // Paid bookings are confirmed later by the payment service, which sends the email then.
+  // Only a free booking is confirmed right away, so only it is mailed here.
   // Fire-and-forget: the booking already succeeded. A mail failure is logged, never returned.
-  sendBookingConfirmation({ booking: dto, user: req.user }).catch((err) =>
-    console.error("Booking confirmation email failed:", err.message)
-  );
+  if (dto.status === "confirmed") {
+    sendBookingConfirmation({ booking: dto, user: req.user }).catch((err) =>
+      console.error("Booking confirmation email failed:", err.message)
+    );
+  }
 });
 
 const getBookingHandler = asyncHandler(async (req, res) => {
