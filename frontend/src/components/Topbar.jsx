@@ -6,22 +6,9 @@ export function Logo() {
   return (
     <span className="logo" aria-label="DarshanEase">
       <span className="logo-mark">
-        <svg
-          width="19"
-          height="19"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
-          <path d="M20 3v4" />
-          <path d="M22 5h-4" />
-          <path d="M4 17v2" />
-          <path d="M5 18H3" />
+        <svg width="20" height="20" viewBox="10 8 44 48" aria-hidden="true">
+          <path fill="currentColor" d="M32 10l3 5h-6z M27 16h10l2 6H25z M23 23h18l2 7H21z M19 31h26l2 8H17z M14 40h36v14H14z" />
+          <path fill="var(--primary-dark)" d="M28 54v-8a4 4 0 0 1 8 0v8z" />
         </svg>
       </span>
       <span>
