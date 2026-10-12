@@ -109,13 +109,13 @@ export default function Topbar() {
         <NotificationMenu key={user?._id ?? "guest"} />
         {user ? (
           <div className="profile-wrap">
-            <div className="profile-button">
+            <Link className="profile-button" to="/dashboard" aria-label="Open your account">
               <span className="avatar">{initials}</span>
               <span className="profile-copy">
                 <strong>{user.name}</strong>
                 <small>{user.role}</small>
               </span>
-            </div>
+            </Link>
           </div>
         ) : (
           <>
