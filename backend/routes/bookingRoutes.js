@@ -9,6 +9,7 @@ const {
 const {
   createBookingHandler,
   getBookingHandler,
+  syncPaymentHandler,
   getMyBookingsHandler,
   cancelBookingHandler,
   modifyBookingHandler,
@@ -20,6 +21,7 @@ router.post("/", protect, createBookingValidator, validate, createBookingHandler
 // /me must stay above /:id, otherwise "me" is treated as a booking id
 router.get("/me", protect, getMyBookingsHandler);
 router.get("/:id", protect, getBookingValidator, validate, getBookingHandler);
+router.post("/:id/payment/sync", protect, getBookingValidator, validate, syncPaymentHandler);
 router.patch("/:id/cancel", protect, getBookingValidator, validate, cancelBookingHandler);
 router.patch("/:id", protect, modifyBookingValidator, validate, modifyBookingHandler);
 

@@ -9,6 +9,7 @@ const {
 } = require("../services/bookingService");
 const { generateTicketQR } = require("../services/ticketService");
 const { sendBookingConfirmation } = require("../services/emailService");
+const { syncPaymentStatus } = require("../services/paymentService");
 
 const createBookingHandler = asyncHandler(async (req, res) => {
   const { slotId, numberOfDevotees, donationAmount } = req.body;
@@ -35,16 +36,38 @@ const createBookingHandler = asyncHandler(async (req, res) => {
   }
 });
 
+// The ticket QR is only issued once the booking is confirmed. A pending booking has no ticket yet.
+const withTicket = async (booking) => {
+  const dto = toBookingDTO(booking);
+  const qrCode = dto.status === "confirmed" ? await generateTicketQR(booking._id) : null;
+  return { ...dto, qrCode };
+};
+
 const getBookingHandler = asyncHandler(async (req, res) => {
   const booking = await getBookingForUser({
     bookingId: req.params.id,
     userId: req.user._id,
   });
-  const qrCode = await generateTicketQR(booking._id);
   res.status(200).json({
     success: true,
     message: "OK",
-    data: { booking: { ...toBookingDTO(booking), qrCode } },
+    data: { booking: await withTicket(booking) },
+  });
+});
+
+// Called by the frontend after the Snap popup closes. Pulls the latest status from Midtrans for this booking.
+const syncPaymentHandler = asyncHandler(async (req, res) => {
+  const bookingId = req.params.id;
+  const userId = req.user._id;
+  // Ownership check first, so a stranger cannot trigger a sync on someone else's booking
+  await getBookingForUser({ bookingId, userId });
+  await syncPaymentStatus(bookingId);
+
+  const booking = await getBookingForUser({ bookingId, userId });
+  res.status(200).json({
+    success: true,
+    message: "OK",
+    data: { booking: await withTicket(booking) },
   });
 });
 
@@ -82,6 +105,7 @@ const modifyBookingHandler = asyncHandler(async (req, res) => {
 module.exports = {
   createBookingHandler,
   getBookingHandler,
+  syncPaymentHandler,
   getMyBookingsHandler,
   cancelBookingHandler,
   modifyBookingHandler,
