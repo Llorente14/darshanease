@@ -9,6 +9,7 @@ const connectDB = require("./config/db");
 const { initSocket } = require("./config/socket");
 const { globalLimiter } = require("./middleware/rateLimiter");
 const errorHandler = require("./middleware/errorHandler");
+const { startPaymentSweeper } = require("./services/paymentSweeper");
 
 // Fail fast on missing required env vars
 if (!process.env.MONGO_URI) {
@@ -81,6 +82,7 @@ connectDB().then(() => {
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
+  startPaymentSweeper();
 });
 
 process.on("unhandledRejection", (err) => {
