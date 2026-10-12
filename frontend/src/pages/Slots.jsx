@@ -9,6 +9,7 @@ import Topbar from "../components/Topbar";
 import { useSlotUpdates } from "../hooks/useSlotUpdates";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const PAGE_SIZE = 10;
 const ID_PATTERN = /^[a-f\d]{24}$/i;
 
 // Only well-formed values reach the API, so a hand-edited URL cannot trigger a 422 loop.
@@ -106,6 +107,9 @@ export default function Slots() {
   const [response, setResponse] = useState({ key: null, slots: [], failed: false });
   const requestKey = `${templeId}|${date}|${retryCount}`;
   const isCurrent = response.key === requestKey;
+  // Page is remembered per filter set; changing the filters starts again at page 1
+  const filterKey = `${templeId}|${date}`;
+  const [pageState, setPageState] = useState({ key: null, page: 1 });
 
   // Realtime: patch only the matching slot in place. No refetch, and _id keys stay the same.
   useSlotUpdates(({ slotId, availableSeats, status }) => {
@@ -154,6 +158,14 @@ export default function Slots() {
   const loading = !isCurrent;
   const slots = isCurrent && !response.failed ? response.slots : [];
   const failed = isCurrent && response.failed;
+  const totalPages = Math.max(1, Math.ceil(slots.length / PAGE_SIZE));
+  const page = Math.min(pageState.key === filterKey ? pageState.page : 1, totalPages);
+  const visibleSlots = slots.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const goToPage = (nextPage) => {
+    setPageState({ key: filterKey, page: nextPage });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   let content;
   if (loading) {
@@ -191,7 +203,7 @@ export default function Slots() {
   } else {
     content = (
       <div className="slot-list slot-grid">
-        {slots.map((slot) => (
+        {visibleSlots.map((slot) => (
           <SlotCard
             key={slot._id}
             slot={slot}
@@ -239,6 +251,24 @@ export default function Slots() {
           </p>
         </div>
         {content}
+        {!loading && !failed && slots.length > PAGE_SIZE && (
+          <nav className="pagination" aria-label="Darshan slot pages">
+            <span>
+              {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, slots.length)} of {slots.length}
+            </span>
+            <div>
+              <button type="button" aria-label="Previous page" disabled={page === 1} onClick={() => goToPage(page - 1)}>
+                ‹
+              </button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <button type="button" aria-label="Next page" disabled={page === totalPages} onClick={() => goToPage(page + 1)}>
+                ›
+              </button>
+            </div>
+          </nav>
+        )}
       </main>
       <Footer />
     </div>
