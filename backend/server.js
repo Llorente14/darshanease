@@ -52,6 +52,8 @@ app.use("/api/organizer/slots", require("./routes/organizerSlotRoutes"));
 
 app.use("/api/admin/users", require("./routes/adminUserRoutes"));
 
+app.use("/api/admin/reports", require("./routes/adminReportRoutes"));
+
 // Health check
 app.get("/api/health", (req, res) => {
   res.status(200).json({ success: true, message: "DarshanEase API is running" });
