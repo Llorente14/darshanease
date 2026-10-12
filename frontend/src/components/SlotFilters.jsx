@@ -1,4 +1,5 @@
 import Button from "./Button";
+import StyledSelect from "./StyledSelect";
 
 // Today as "YYYY-MM-DD" in local time. Built from parts, not toISOString(), which is UTC.
 function todayString() {
@@ -43,21 +44,18 @@ export default function SlotFilters({
 
   return (
     <div className="filter-panel slot-filters">
-      <label htmlFor="slot-filter-temple">
+      <label>
         <span>Temple</span>
-        <select
-          id="slot-filter-temple"
-          name="templeId"
+        <StyledSelect
+          label="Filter by temple"
           value={templeId}
-          onChange={(event) => onTempleChange(event.target.value)}
-        >
-          <option value="">All temples</option>
-          {temples.map((temple) => (
-            <option key={temple._id} value={temple._id}>
-              {temple.templeName}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: "", label: "All temples" },
+            ...temples.map((temple) => ({ value: temple._id, label: temple.templeName })),
+          ]}
+          onChange={onTempleChange}
+          minWidth={180}
+        />
       </label>
       <label htmlFor="slot-filter-date">
         <span>Date</span>
