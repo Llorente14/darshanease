@@ -47,7 +47,7 @@ function SpinnerIcon() {
   );
 }
 
-function BookingCard({ booking, muted, onView, onCancel, onModify }) {
+function BookingCard({ booking, muted, onView, onPay, onCancel, onModify }) {
   const { slot } = booking;
   const parts = formatSlotDateParts(slot.date);
   const badge = statusBadge(booking.status);
@@ -93,7 +93,8 @@ function BookingCard({ booking, muted, onView, onCancel, onModify }) {
             Cancel
           </Button>
         )}
-        {!muted && !booking.canChange && <small>Changes closed</small>}
+        {!muted && booking.status === "pending" && <Button onClick={onPay}>Pay now</Button>}
+        {!muted && booking.status !== "pending" && !booking.canChange && <small>Changes closed</small>}
       </div>
     </article>
   );
@@ -235,6 +236,7 @@ export default function MyBookings() {
             booking={booking}
             muted={tab === "past"}
             onView={() => navigate(`/bookings/${booking._id}`)}
+            onPay={() => navigate(`/bookings/${booking._id}?pay=1`)}
             onCancel={() => openDialog({ type: "cancel", booking })}
             onModify={() => openDialog({ type: "modify", booking })}
           />
