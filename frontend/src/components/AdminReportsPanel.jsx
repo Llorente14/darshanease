@@ -129,6 +129,7 @@ export default function AdminReportsPanel() {
 
   return (
     <>
+      {/* minWidth 0 on grid items: lets columns shrink below the wide status table on phones */}
       <div className="metrics-grid">
         <MetricCard
           label="Confirmed revenue"
@@ -177,143 +178,147 @@ export default function AdminReportsPanel() {
         />
       </div>
 
-      <div className="analytics-grid">
-        <section className="chart-card">
-          <div className="chart-head">
-            <h2>Bookings, last 14 days</h2>
-          </div>
-          {!hasDailyBookings && <small>No bookings in the last 14 days.</small>}
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={dailyBookings} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid vertical={false} stroke="var(--line)" />
-              <XAxis
-                dataKey="date"
-                tickFormatter={shortDate}
-                tick={{ fontSize: 10 }}
-                interval="preserveStartEnd"
-              />
-              <YAxis allowDecimals={false} width={28} tick={{ fontSize: 10 }} />
-              <Tooltip
-                cursor={{ fill: "var(--primary-soft)" }}
-                labelFormatter={formatDailyLabel}
-                formatter={(value, name, item) => [
-                  `${value} · ${formatPrice(item.payload.revenue)}`,
-                  "Bookings",
-                ]}
-                contentStyle={{ border: "1px solid var(--line)", borderRadius: 8, fontSize: 12 }}
-              />
-              <Bar
-                dataKey="bookings"
-                name="Bookings"
-                fill="var(--primary-dark)"
-                radius={[5, 5, 0, 0]}
-                maxBarSize={28}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </section>
+      {/* One grid for all chart rows, so the rows keep the same gap as the columns */}
+      <div style={{ display: "grid", gap: 18 }}>
+        <div className="analytics-grid">
+          <section className="chart-card" style={{ minWidth: 0 }}>
+            <div className="chart-head">
+              <h2>Bookings, last 14 days</h2>
+            </div>
+            {!hasDailyBookings && <small>No bookings in the last 14 days.</small>}
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={dailyBookings} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke="var(--line)" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={shortDate}
+                  tick={{ fontSize: 10 }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis allowDecimals={false} width={28} tick={{ fontSize: 10 }} />
+                <Tooltip
+                  cursor={{ fill: "var(--primary-soft)" }}
+                  labelFormatter={formatDailyLabel}
+                  formatter={(value, name, item) => [
+                    `${value} · ${formatPrice(item.payload.revenue)}`,
+                    "Bookings",
+                  ]}
+                  contentStyle={{ border: "1px solid var(--line)", borderRadius: 8, fontSize: 12 }}
+                />
+                <Bar
+                  dataKey="bookings"
+                  name="Bookings"
+                  fill="var(--primary-dark)"
+                  radius={[5, 5, 0, 0]}
+                  maxBarSize={28}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </section>
 
-        <section className="chart-card">
-          <div className="chart-head">
-            <h2>Popular temples</h2>
-          </div>
-          {topTemples.length === 0 ? (
-            <p>No confirmed bookings yet.</p>
-          ) : (
-            <ol className="ranking-list">
-              {topTemples.map((temple, index) => (
-                <li key={temple.templeId}>
-                  <span>{index + 1}</span>
-                  <div>
-                    <p>
-                      <strong>{temple.templeName}</strong>
-                      <small>{temple.devotees} devotees</small>
-                    </p>
+          <section className="chart-card" style={{ minWidth: 0 }}>
+            <div className="chart-head">
+              <h2>Popular temples</h2>
+            </div>
+            {topTemples.length === 0 ? (
+              <p>No confirmed bookings yet.</p>
+            ) : (
+              <ol className="ranking-list">
+                {topTemples.map((temple, index) => (
+                  <li key={temple.templeId}>
+                    <span>{index + 1}</span>
                     <div>
-                      <span style={{ width: `${barPercent(temple.devotees, topTempleDevotees)}%` }} />
+                      <p>
+                        <strong>{temple.templeName}</strong>
+                        <small>{temple.devotees} devotees</small>
+                      </p>
+                      <div>
+                        <span style={{ width: `${barPercent(temple.devotees, topTempleDevotees)}%` }} />
+                      </div>
                     </div>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        </div>
 
-      <div className="analytics-grid">
-        <section className="chart-card">
-          <div className="chart-head">
-            <h2>Bookings by status</h2>
-          </div>
-          <div className="table-card">
-            <table>
-              <thead>
-                <tr>
-                  <th>Status</th>
-                  <th>Bookings</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bookingsByStatus.length === 0 && (
+        <div className="analytics-grid">
+          <section className="chart-card" style={{ minWidth: 0 }}>
+            <div className="chart-head">
+              <h2>Bookings by status</h2>
+            </div>
+            <div className="table-card">
+              <table>
+                <thead>
                   <tr>
-                    <td colSpan={2}>No bookings yet.</td>
+                    <th>Status</th>
+                    <th>Bookings</th>
                   </tr>
-                )}
-                {bookingsByStatus.map((row) => {
-                  const badge = statusBadge(row.status);
-                  return (
-                    <tr key={row.status}>
-                      <td>
-                        <span className={`status ${badge.tone}`}>
-                          <span className="status-dot" aria-hidden="true" />
-                          {badge.label}
-                        </span>
-                      </td>
-                      <td>{row.count}</td>
+                </thead>
+                <tbody>
+                  {bookingsByStatus.length === 0 && (
+                    <tr>
+                      <td colSpan={2}>No bookings yet.</td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
+                  )}
+                  {bookingsByStatus.map((row) => {
+                    const badge = statusBadge(row.status);
+                    return (
+                      <tr key={row.status}>
+                        <td>
+                          <span className={`status ${badge.tone}`}>
+                            <span className="status-dot" aria-hidden="true" />
+                            {badge.label}
+                          </span>
+                        </td>
+                        <td>{row.count}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
 
-        <section className="chart-card demographics">
-          <div className="chart-head">
-            <h2>Devotee demographics</h2>
-          </div>
-          <div className="demographic-grid">
-            {usersByRole.map((row) => (
-              <div key={row.role}>
-                <span>{row.count}</span>
-                <strong>{ROLE_LABEL[row.role] ?? row.role}</strong>
-                <small>users</small>
-              </div>
-            ))}
-          </div>
-          <h3>Top locations</h3>
-          {topLocations.length === 0 ? (
-            <p>No devotee addresses yet.</p>
-          ) : (
-            <ol className="ranking-list">
-              {topLocations.map((item, index) => (
-                <li key={item.location}>
-                  <span>{index + 1}</span>
-                  <div>
-                    <p>
-                      <strong>{item.location}</strong>
-                      <small>{item.users} users</small>
-                    </p>
-                    <div>
-                      <span style={{ width: `${barPercent(item.users, topLocationUsers)}%` }} />
-                    </div>
-                  </div>
-                </li>
+          <section className="chart-card demographics" style={{ minWidth: 0 }}>
+            <div className="chart-head">
+              <h2>Devotee demographics</h2>
+            </div>
+            {/* auto-fit: boxes wrap instead of overflowing the card when it is narrow */}
+            <div className="demographic-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))" }}>
+              {usersByRole.map((row) => (
+                <div key={row.role}>
+                  <span>{row.count}</span>
+                  <strong>{ROLE_LABEL[row.role] ?? row.role}</strong>
+                  <small>users</small>
+                </div>
               ))}
-            </ol>
-          )}
-          <small>Based on the last part of each devotee&apos;s address.</small>
-        </section>
+            </div>
+            <h3>Top locations</h3>
+            {topLocations.length === 0 ? (
+              <p>No devotee addresses yet.</p>
+            ) : (
+              <ol className="ranking-list">
+                {topLocations.map((item, index) => (
+                  <li key={item.location}>
+                    <span>{index + 1}</span>
+                    <div>
+                      <p>
+                        <strong>{item.location}</strong>
+                        <small>{item.users} users</small>
+                      </p>
+                      <div>
+                        <span style={{ width: `${barPercent(item.users, topLocationUsers)}%` }} />
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+            <small>Based on the last part of each devotee&apos;s address.</small>
+          </section>
+        </div>
       </div>
     </>
   );
