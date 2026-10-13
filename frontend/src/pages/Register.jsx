@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import Button from "../components/Button";
+import { useToast } from "../components/toastContext";
 import FormInput from "../components/FormInput";
 import PasswordInput from "../components/PasswordInput";
 import Topbar from "../components/Topbar";
@@ -75,27 +76,6 @@ function validateField(field, values) {
   }
 }
 
-function AlertIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      style={{ flex: "none" }}
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 8v4" />
-      <path d="M12 16h.01" />
-    </svg>
-  );
-}
-
 function SparkleIcon() {
   return (
     <svg
@@ -140,9 +120,9 @@ function ArrowLeftIcon() {
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const [values, setValues] = useState(INITIAL_VALUES);
   const [errors, setErrors] = useState({});
-  const [generalError, setGeneralError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   // Synchronous guard: state updates are async, a ref blocks same-tick double submits
   const inFlight = useRef(false);
@@ -176,7 +156,6 @@ export default function Register() {
     }
 
     setErrors({});
-    setGeneralError("");
     inFlight.current = true;
     setSubmitting(true);
     try {
@@ -206,20 +185,20 @@ export default function Register() {
           setErrors((prev) => ({ ...prev, ...fieldErrors }));
         }
         if (unmapped || Object.keys(fieldErrors).length === 0) {
-          setGeneralError(
+          toast.error(
             response.data?.message || "Something went wrong. Please try again."
           );
         }
       } else if (response?.status === 429) {
-        setGeneralError(
+        toast.error(
           "Too many attempts. Please wait about 15 minutes and try again."
         );
       } else if (response) {
-        setGeneralError(
+        toast.error(
           response.data?.message || "Something went wrong. Please try again."
         );
       } else {
-        setGeneralError(
+        toast.error(
           "Unable to reach the server. Please check your connection and try again."
         );
       }
@@ -231,6 +210,8 @@ export default function Register() {
 
   return (
     <div className="public-shell">
+      <title>Create account | DarshanEase</title>
+      <meta name="description" content="Create a free DarshanEase account to book temple darshan slots, track your bookings and get your e-ticket by email in a few steps." />
       <Topbar />
       <main className="auth-page">
         <div className="auth-visual">
@@ -251,12 +232,6 @@ export default function Register() {
             <span className="eyebrow">Join DarshanEase</span>
             <h1>Create your account</h1>
             <p>One account for simpler temple visits.</p>
-            {generalError && (
-              <div className="feedback error" role="alert">
-                <AlertIcon />
-                {generalError}
-              </div>
-            )}
             <FormInput
               label="Full name"
               name="name"

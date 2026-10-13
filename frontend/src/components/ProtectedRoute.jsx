@@ -58,7 +58,7 @@ export default function ProtectedRoute({ allowedRoles }) {
             <div className="state-card" style={{ maxWidth: 480, width: "100%" }}>
               <div
                 className="state-icon"
-                style={{ color: "var(--red)", background: "#ffebed" }}
+                style={{ color: "var(--red)", background: "var(--red-soft)" }}
               >
                 <svg
                   width="28"

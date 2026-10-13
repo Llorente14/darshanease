@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
 import {
   createMyTemple,
   deleteMyTemple,
@@ -13,6 +14,8 @@ import OrganizerSlotsPanel from "../components/OrganizerSlotsPanel";
 import Topbar from "../components/Topbar";
 import { useAuth } from "../context/useAuth";
 import { formatTimeRange } from "../utils/format";
+import { modalBackdrop, modalPanel } from "../utils/motionPresets";
+import { useToast } from "../components/toastContext";
 
 const EMPTY_FORM = {
   templeName: "",
@@ -76,17 +79,6 @@ const toForm = (temple) => ({
   latitude: temple.latitude == null ? "" : String(temple.latitude),
   longitude: temple.longitude == null ? "" : String(temple.longitude),
 });
-
-const iconButtonStyle = {
-  width: 30,
-  height: 30,
-  display: "grid",
-  placeItems: "center",
-  border: "1px solid var(--line)",
-  background: "white",
-  borderRadius: 7,
-  color: "#60708b",
-};
 
 function SpinnerIcon() {
   return (
@@ -165,6 +157,7 @@ function EyeIcon() {
 
 export default function OrganizerTemples() {
   const { user } = useAuth();
+  const toast = useToast();
   const isAdmin = user?.role === "admin";
 
   // The active tab lives in the URL (?tab=slots), so a refresh keeps the same tab
@@ -173,7 +166,6 @@ export default function OrganizerTemples() {
   const selectTab = (next) => setSearchParams(next === "slots" ? { tab: "slots" } : {});
 
   const [retryCount, setRetryCount] = useState(0);
-  const [notice, setNotice] = useState("");
 
   // Same pattern as MyBookings: a response only counts when its key matches the current request
   const [request, setRequest] = useState({ key: null, data: null, failed: false });
@@ -194,7 +186,6 @@ export default function OrganizerTemples() {
   // Delete dialog: the temple to delete, or null when closed
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [dialogError, setDialogError] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -211,40 +202,33 @@ export default function OrganizerTemples() {
   useEffect(() => {
     if (!deleteTarget) return undefined;
     const onKeyDown = (event) => {
-      if (event.key === "Escape" && !deleting) {
-        setDeleteTarget(null);
-        setDialogError("");
-      }
+      if (event.key === "Escape" && !deleting) setDeleteTarget(null);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [deleteTarget, deleting]);
 
   const openDelete = (temple) => {
-    setNotice("");
-    setDialogError("");
     setDeleteTarget(temple);
   };
 
   const closeDelete = () => {
     if (deleting) return;
     setDeleteTarget(null);
-    setDialogError("");
   };
 
   const confirmDelete = async () => {
     setDeleting(true);
-    setDialogError("");
     try {
       await deleteMyTemple(deleteTarget._id);
       // If the deleted temple was open in the form, clear the form so it cannot be saved again
       if (editingId === deleteTarget._id) resetForm();
       setDeleteTarget(null);
-      setNotice("Temple deleted.");
+      toast.success("Temple deleted.");
       setRetryCount((count) => count + 1);
     } catch (err) {
-      // 409 means the temple still has darshan slots. The message stays in the dialog.
-      setDialogError(err.response?.data?.message || "Something went wrong. Please try again.");
+      // 409 means the temple still has darshan slots; the API message is shown in a toast
+      toast.error(err);
     } finally {
       setDeleting(false);
     }
@@ -261,7 +245,6 @@ export default function OrganizerTemples() {
   };
 
   const startEdit = (temple) => {
-    setNotice("");
     setEditingId(temple._id);
     setForm(toForm(temple));
     setFieldErrors({});
@@ -275,22 +258,24 @@ export default function OrganizerTemples() {
     setSaving(true);
     setFormError("");
     setFieldErrors({});
-    setNotice("");
     try {
       const payload = toPayload(form);
       if (editingId) {
         await updateMyTemple(editingId, payload);
-        setNotice("Temple updated.");
+        toast.success("Temple updated.");
       } else {
         await createMyTemple(payload);
-        setNotice("Temple created.");
+        toast.success("Temple created.");
       }
       resetForm();
       setRetryCount((count) => count + 1);
     } catch (err) {
+      // Field validation stays inline under the fields; any other API or network error goes to a toast
       const data = err.response?.data;
-      setFormError(data?.message || "Something went wrong. Please try again.");
-      setFieldErrors(mapFieldErrors(data?.errors));
+      const fields = mapFieldErrors(data?.errors);
+      setFieldErrors(fields);
+      if (Object.keys(fields).length > 0) setFormError(data?.message || "Please check the highlighted fields.");
+      else toast.error(err);
     } finally {
       setSaving(false);
     }
@@ -366,7 +351,6 @@ export default function OrganizerTemples() {
                       <Link
                         to={`/temples/${temple._id}`}
                         aria-label={`View ${temple.templeName}`}
-                        style={iconButtonStyle}
                       >
                         <EyeIcon />
                       </Link>
@@ -385,6 +369,7 @@ export default function OrganizerTemples() {
 
   return (
     <div className="public-shell">
+      <title>Organizer | DarshanEase</title>
       <Topbar />
       <main className="slots-main">
         <div className="page-header">
@@ -417,12 +402,6 @@ export default function OrganizerTemples() {
         </div>
         {tab === "temples" ? (
           <>
-          {notice && (
-            <div className="feedback success" role="status">
-              {notice}
-            </div>
-          )}
-
           <div className="organizer-layout">
             {/* minWidth 0: lets the single-column grid shrink below the table width on phones */}
             <div style={{ minWidth: 0 }}>{listBody}</div>
@@ -550,9 +529,11 @@ export default function OrganizerTemples() {
       </main>
       <Footer />
 
+      <AnimatePresence>
       {deleteTarget && (
-        <div className="modal-backdrop" onClick={closeDelete}>
-          <div
+        <motion.div className="modal-backdrop" onClick={closeDelete} {...modalBackdrop}>
+          <motion.div
+            {...modalPanel}
             className="modal"
             role="dialog"
             aria-modal="true"
@@ -573,11 +554,6 @@ export default function OrganizerTemples() {
               {deleteTarget.templeName} · {deleteTarget.location}
             </p>
             <div className="modal-note">Temples that still have darshan slots cannot be deleted.</div>
-            {dialogError && (
-              <p className="field-error" role="alert">
-                {dialogError}
-              </p>
-            )}
             <div className="modal-actions">
               <Button variant="secondary" onClick={closeDelete} disabled={deleting}>
                 Keep temple
@@ -586,9 +562,10 @@ export default function OrganizerTemples() {
                 Delete temple
               </Button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

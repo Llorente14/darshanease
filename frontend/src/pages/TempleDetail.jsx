@@ -8,6 +8,7 @@ import TempleMap from "../components/TempleMap";
 import Topbar from "../components/Topbar";
 import { useSlotUpdates } from "../hooks/useSlotUpdates";
 import { formatTimeRange } from "../utils/format";
+import { fitDescription } from "../utils/meta";
 
 // Use the temple image only when it is a valid https URL. Anything else falls back to the CSS default.
 const safeImageStyle = (imageUrl) => {
@@ -184,9 +185,10 @@ export default function TempleDetail() {
           </div>
         ) : (
           <div className="slot-list">
-            {slots.map((slot) => (
+            {slots.map((slot, index) => (
               <SlotCard
                 key={slot._id}
+                index={index}
                 slot={slot}
                 footer={
                   slot.status === "available" ? (
@@ -277,8 +279,18 @@ export default function TempleDetail() {
     );
   }
 
+  const templeInfo = data?.temple;
+  const pageTitle = templeInfo ? `${templeInfo.templeName} | DarshanEase` : "Temple | DarshanEase";
+  const pageDescription = fitDescription(
+    templeInfo
+      ? `${templeInfo.templeName} in ${templeInfo.location}: darshan hours, offerings and upcoming darshan slots. Choose a time and book your visit online.`
+      : "Temple details, darshan hours, offerings and upcoming darshan slots. Choose a time and book your visit online with DarshanEase."
+  );
+
   return (
     <div className="public-shell">
+      <title>{pageTitle}</title>
+      <meta name="description" content={pageDescription} />
       <Topbar />
       <main className="slots-main">
         <button className="back-link" type="button" onClick={() => navigate("/slots")}>

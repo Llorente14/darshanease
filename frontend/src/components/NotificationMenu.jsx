@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import { getMyBookings } from "../services/bookingService";
 import { useAuth } from "../context/useAuth";
+import { tap } from "../utils/motionPresets";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_ITEMS = 5;
@@ -137,7 +139,8 @@ export default function NotificationMenu() {
 
   return (
     <div className="profile-wrap" ref={wrapRef}>
-      <button
+      <motion.button
+        {...tap}
         className="icon-button bell"
         type="button"
         aria-label="Notifications"
@@ -147,7 +150,7 @@ export default function NotificationMenu() {
       >
         <BellIcon />
         {items.length > 0 && <span />}
-      </button>
+      </motion.button>
       {isOpen && (
         <div className="profile-menu" role="menu">
           <p>Notifications</p>

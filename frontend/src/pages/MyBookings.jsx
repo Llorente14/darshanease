@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
 import { cancelBooking, getMyBookings, modifyBooking } from "../services/bookingService";
 import Button from "../components/Button";
 import Footer from "../components/Footer";
 import Topbar from "../components/Topbar";
+import { useToast } from "../components/toastContext";
 import { formatPrice, formatSlotDateParts, formatTimeRange } from "../utils/format";
+import { cardEnter, modalBackdrop, modalPanel } from "../utils/motionPresets";
 
 // Status badge per API status. Unknown values are shown as-is with a neutral tone.
 const STATUS_BADGE = {
@@ -51,13 +54,13 @@ function SpinnerIcon() {
   );
 }
 
-function BookingCard({ booking, muted, onView, onPay, onCancel, onModify }) {
+function BookingCard({ index, booking, muted, onView, onPay, onCancel, onModify }) {
   const { slot } = booking;
   const parts = formatSlotDateParts(slot.date);
   const badge = statusBadge(booking.status);
 
   return (
-    <article className={`history-card${muted ? " muted" : ""}`}>
+    <motion.article className={`history-card${muted ? " muted" : ""}`} {...cardEnter(index)}>
       <div className="history-date">
         <strong>{parts.day}</strong>
         <span>
@@ -103,20 +106,19 @@ function BookingCard({ booking, muted, onView, onPay, onCancel, onModify }) {
         )}
         {!muted && booking.status !== "pending" && !booking.canChange && <small>Changes closed</small>}
       </div>
-    </article>
+    </motion.article>
   );
 }
 
 export default function MyBookings() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [tab, setTab] = useState("upcoming");
   const [retryCount, setRetryCount] = useState(0);
 
   // Dialog state: { type: "cancel" | "modify", booking } or null
   const [dialog, setDialog] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [dialogError, setDialogError] = useState("");
-  const [notice, setNotice] = useState("");
   const [count, setCount] = useState(1);
 
   // Same pattern as the other pages: a response only counts when its key matches the current request
@@ -144,18 +146,13 @@ export default function MyBookings() {
   useEffect(() => {
     if (!dialog) return undefined;
     const onKeyDown = (event) => {
-      if (event.key === "Escape" && !submitting) {
-        setDialog(null);
-        setDialogError("");
-      }
+      if (event.key === "Escape" && !submitting) setDialog(null);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [dialog, submitting]);
 
   const openDialog = (next) => {
-    setNotice("");
-    setDialogError("");
     if (next.type === "modify") setCount(next.booking.numberOfDevotees);
     setDialog(next);
   };
@@ -163,24 +160,22 @@ export default function MyBookings() {
   const closeDialog = () => {
     if (submitting) return;
     setDialog(null);
-    setDialogError("");
   };
 
   // On success the list is refetched, so the booking moves to Past on its own (server decides)
   const finishAction = (message) => {
     setDialog(null);
-    setNotice(message);
+    toast.success(message);
     setRetryCount((c) => c + 1);
   };
 
   const confirmCancel = async () => {
     setSubmitting(true);
-    setDialogError("");
     try {
       await cancelBooking(dialog.booking._id);
       finishAction("Booking cancelled.");
     } catch (err) {
-      setDialogError(err.response?.data?.message || "Something went wrong. Please try again.");
+      toast.error(err);
     } finally {
       setSubmitting(false);
     }
@@ -188,12 +183,11 @@ export default function MyBookings() {
 
   const confirmModify = async () => {
     setSubmitting(true);
-    setDialogError("");
     try {
       await modifyBooking(dialog.booking._id, count);
       finishAction("Booking updated.");
     } catch (err) {
-      setDialogError(err.response?.data?.message || "Something went wrong. Please try again.");
+      toast.error(err);
     } finally {
       setSubmitting(false);
     }
@@ -237,9 +231,10 @@ export default function MyBookings() {
   } else {
     body = (
       <div className="slot-list">
-        {list.map((booking) => (
+        {list.map((booking, index) => (
           <BookingCard
-            key={booking._id}
+            key={`${tab}-${booking._id}`}
+            index={index}
             booking={booking}
             muted={tab === "past"}
             onView={() => navigate(`/bookings/${booking._id}`)}
@@ -254,6 +249,7 @@ export default function MyBookings() {
 
   return (
     <div className="public-shell">
+      <title>My Bookings | DarshanEase</title>
       <Topbar />
       <main className="slots-main">
         <div className="page-header">
@@ -262,11 +258,6 @@ export default function MyBookings() {
             <h1>Booking history</h1>
           </div>
         </div>
-        {notice && (
-          <div className="privacy-note" role="status">
-            {notice}
-          </div>
-        )}
         {!loading && !failed && (
           <div className="booking-tabs" role="tablist">
             <button
@@ -293,9 +284,11 @@ export default function MyBookings() {
       </main>
       <Footer />
 
+      <AnimatePresence>
       {dialog && (
-        <div className="modal-backdrop" onClick={closeDialog}>
-          <div
+        <motion.div className="modal-backdrop" onClick={closeDialog} {...modalBackdrop}>
+          <motion.div
+            {...modalPanel}
             className="modal"
             role="dialog"
             aria-modal="true"
@@ -316,11 +309,6 @@ export default function MyBookings() {
                 <h2 id="dialog-title">Cancel this booking?</h2>
                 <p>{bookingDetail(dialog.booking)}</p>
                 <div className="modal-note">Your seats will be released immediately.</div>
-                {dialogError && (
-                  <p className="field-error" role="alert">
-                    {dialogError}
-                  </p>
-                )}
                 <div className="modal-actions">
                   <Button variant="secondary" onClick={closeDialog} disabled={submitting}>
                     Keep booking
@@ -361,11 +349,6 @@ export default function MyBookings() {
                 {dialog.booking.donationAmount > 0 && (
                   <small>Includes your {formatPrice(dialog.booking.donationAmount)} donation.</small>
                 )}
-                {dialogError && (
-                  <p className="field-error" role="alert">
-                    {dialogError}
-                  </p>
-                )}
                 <div className="modal-actions">
                   <Button variant="secondary" onClick={closeDialog} disabled={submitting}>
                     Close
@@ -380,9 +363,10 @@ export default function MyBookings() {
                 </div>
               </>
             )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

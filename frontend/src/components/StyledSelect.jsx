@@ -123,6 +123,7 @@ export default function StyledSelect({
     <span id={id} style={{ position: "relative", display: "inline-block", minWidth }}>
       <button
         ref={triggerRef}
+        className="select-trigger"
         type="button"
         aria-label={label}
         aria-haspopup="listbox"
@@ -139,16 +140,15 @@ export default function StyledSelect({
           height: 40,
           padding: "0 12px",
           border: `1px solid ${open ? "var(--primary-hover)" : "var(--line)"}`,
-          boxShadow: open ? "0 0 0 3px var(--primary-soft)" : "none",
-          borderRadius: 8,
+          borderRadius: "var(--radius-md)",
           background: "white",
           color: "var(--navy)",
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: 600,
           textAlign: "left",
           cursor: disabled ? "not-allowed" : "pointer",
           opacity: disabled ? 0.55 : 1,
-          transition: "border-color .15s, box-shadow .15s",
+          transition: "border-color .15s",
         }}
       >
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -174,8 +174,8 @@ export default function StyledSelect({
             padding: 6,
             background: "white",
             border: "1px solid var(--line)",
-            borderRadius: 10,
-            boxShadow: "0 14px 34px rgba(9,17,35,.14)",
+            borderRadius: "var(--radius-md)",
+            boxShadow: "var(--shadow-float)",
           }}
         >
           {options.map((option, index) => {
@@ -194,8 +194,8 @@ export default function StyledSelect({
                   justifyContent: "space-between",
                   gap: 10,
                   padding: "9px 10px",
-                  borderRadius: 7,
-                  fontSize: 12,
+                  borderRadius: "calc(var(--radius-md) - 6px)",
+                  fontSize: 14,
                   fontWeight: isSelected ? 700 : 500,
                   color: isSelected ? "var(--primary-dark)" : "var(--navy)",
                   background: isHighlighted ? "var(--primary-soft)" : "transparent",

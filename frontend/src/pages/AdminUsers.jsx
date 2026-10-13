@@ -1,11 +1,14 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
 import { useAuth } from "../context/useAuth";
 import { getUsers, updateUser } from "../services/adminService";
 import Button from "../components/Button";
 import Footer from "../components/Footer";
 import StyledSelect from "../components/StyledSelect";
 import Topbar from "../components/Topbar";
+import { useToast } from "../components/toastContext";
+import { modalBackdrop, modalPanel } from "../utils/motionPresets";
 
 const ROLE_OPTIONS = [
   { value: "devotee", label: "Devotee" },
@@ -61,12 +64,12 @@ const AdminReportsPanel = lazy(() => import("../components/AdminReportsPanel"));
 
 export default function AdminUsers() {
   const { user: me } = useAuth();
+  const toast = useToast();
   // The active tab lives in the URL (?tab=reports), so a refresh keeps the same tab
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") === "reports" ? "reports" : "users";
   const selectTab = (next) => setSearchParams(next === "reports" ? { tab: "reports" } : {});
   const [retryCount, setRetryCount] = useState(0);
-  const [notice, setNotice] = useState("");
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
 
@@ -82,7 +85,6 @@ export default function AdminUsers() {
   // One dialog at a time: a role change or an activate/deactivate action on one user
   const [dialog, setDialog] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [dialogError, setDialogError] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -99,31 +101,24 @@ export default function AdminUsers() {
   useEffect(() => {
     if (!dialog) return undefined;
     const onKeyDown = (event) => {
-      if (event.key === "Escape" && !submitting) {
-        setDialog(null);
-        setDialogError("");
-      }
+      if (event.key === "Escape" && !submitting) setDialog(null);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [dialog, submitting]);
 
   const openDialog = (next) => {
-    setNotice("");
-    setDialogError("");
     setDialog(next);
   };
 
   const closeDialog = () => {
     if (submitting) return;
     setDialog(null);
-    setDialogError("");
   };
 
   // Cancelling leaves the select on the old role: the select is controlled by the stored user.role
   const confirmChange = async () => {
     setSubmitting(true);
-    setDialogError("");
     const payload =
       dialog.type === "role" ? { role: dialog.nextRole } : { isActive: dialog.nextActive };
     try {
@@ -141,9 +136,9 @@ export default function AdminUsers() {
           : prev
       );
       setDialog(null);
-      setNotice("User updated.");
+      toast.success("User updated.");
     } catch (err) {
-      setDialogError(err.response?.data?.message || "Something went wrong. Please try again.");
+      toast.error(err);
     } finally {
       setSubmitting(false);
     }
@@ -304,6 +299,7 @@ export default function AdminUsers() {
 
   return (
     <div className="public-shell">
+      <title>Admin | DarshanEase</title>
       <Topbar />
       <main className="slots-main">
         <div className="page-header">
@@ -338,11 +334,6 @@ export default function AdminUsers() {
         </div>
         {tab === "users" ? (
           <>
-            {notice && (
-              <div className="feedback success" role="status">
-                {notice}
-              </div>
-            )}
             {body}
           </>
         ) : (
@@ -359,9 +350,11 @@ export default function AdminUsers() {
       </main>
       <Footer />
 
+      <AnimatePresence>
       {dialog && (
-        <div className="modal-backdrop" onClick={closeDialog}>
-          <div
+        <motion.div className="modal-backdrop" onClick={closeDialog} {...modalBackdrop}>
+          <motion.div
+            {...modalPanel}
             className="modal"
             role="dialog"
             aria-modal="true"
@@ -378,11 +371,6 @@ export default function AdminUsers() {
               ×
             </button>
             {dialogContent}
-            {dialogError && (
-              <p className="field-error" role="alert">
-                {dialogError}
-              </p>
-            )}
             <div className="modal-actions">
               <Button variant="secondary" onClick={closeDialog} disabled={submitting}>
                 Cancel
@@ -401,9 +389,10 @@ export default function AdminUsers() {
                 </Button>
               )}
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { getBookingById, syncPayment } from "../services/bookingService";
 import Button from "../components/Button";
 import Footer from "../components/Footer";
 import Topbar from "../components/Topbar";
+import { useToast } from "../components/toastContext";
 import { formatPrice, formatSlotDate, formatTimeRange } from "../utils/format";
 import { loadSnap } from "../utils/snap";
 
@@ -105,10 +106,10 @@ const formatWibTime = (value) =>
 export default function BookingConfirmation() {
   const { bookingId } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [retryCount, setRetryCount] = useState(0);
   const [paying, setPaying] = useState(false);
-  const [payError, setPayError] = useState("");
   // Keyed by booking id: the route keeps this component mounted when only the id changes
   const autoPayFor = useRef(null);
   const expiryCheckedFor = useRef(null);
@@ -139,12 +140,14 @@ export default function BookingConfirmation() {
 
   // The status always comes from the server. Snap callbacks only trigger a check, they never set the status.
   const checkStatus = async () => {
-    setPayError("");
     try {
       const result = await syncPayment(bookingId);
+      if (booking?.status === "pending" && result.data.booking.status === "confirmed") {
+        toast.success("Payment confirmed.");
+      }
       setRequest({ key: requestKey, booking: result.data.booking, failure: null });
     } catch {
-      setPayError("Could not check the payment status. Please try again.");
+      toast.error("Could not check the payment status. Please try again.");
     }
   };
 
@@ -160,7 +163,6 @@ export default function BookingConfirmation() {
     try {
       const snap = await loadSnap();
       setPaying(true);
-      setPayError("");
       snap.pay(booking.payment.snapToken, {
         onSuccess: settlePayment,
         onPending: settlePayment,
@@ -168,7 +170,7 @@ export default function BookingConfirmation() {
         onClose: settlePayment,
       });
     } catch (err) {
-      setPayError(err.message);
+      toast.error(err.message);
     } finally {
       opening.current = false;
     }
@@ -275,11 +277,6 @@ export default function BookingConfirmation() {
           <Button variant="secondary" className="wide" disabled={paying} onClick={checkStatus}>
             I have paid, check status
           </Button>
-          {payError && (
-            <p className="field-error" role="alert">
-              {payError}
-            </p>
-          )}
         </aside>
       </div>
     );
@@ -402,6 +399,7 @@ export default function BookingConfirmation() {
 
   return (
     <div className="public-shell">
+      <title>{booking ? `Booking ${booking.bookingCode} | DarshanEase` : "Booking | DarshanEase"}</title>
       <Topbar />
       <main className="slots-main">{body}</main>
       <Footer />

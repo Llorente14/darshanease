@@ -26,7 +26,7 @@ export default function TempleMap({ latitude, longitude, name }) {
       zoom={14}
       scrollWheelZoom={false}
       // MapContainer needs an explicit height, so it is set inline
-      style={{ height: 220, width: "100%", borderRadius: 9 }}
+      style={{ height: 220, width: "100%", borderRadius: "var(--radius-md)" }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

@@ -1,16 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getSlots, getTemples } from "../services/slotService";
 import Button from "../components/Button";
 import Footer from "../components/Footer";
+import Pagination from "../components/Pagination";
 import SlotCard from "../components/SlotCard";
 import SlotFilters from "../components/SlotFilters";
 import Topbar from "../components/Topbar";
 import { useSlotUpdates } from "../hooks/useSlotUpdates";
+import { FAST } from "../utils/motionPresets";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const PAGE_SIZE = 10;
 const ID_PATTERN = /^[a-f\d]{24}$/i;
+const PAGE_SLIDE_PX = 12;
+const SCROLL_GAP_PX = 12;
+
+// The list slides in from the side the user is travelling towards: next = from the right, prev = from the left
+const pageVariants = {
+  enter: (direction) => ({ opacity: 0, x: direction * PAGE_SLIDE_PX }),
+  center: { opacity: 1, x: 0 },
+  exit: (direction) => ({ opacity: 0, x: direction * -PAGE_SLIDE_PX }),
+};
 
 // Only well-formed values reach the API, so a hand-edited URL cannot trigger a 422 loop.
 function isValidDate(value) {
@@ -109,9 +121,11 @@ export default function Slots() {
   const [response, setResponse] = useState({ key: null, slots: [], failed: false });
   const requestKey = `${templeId}|${date}|${q}|${retryCount}`;
   const isCurrent = response.key === requestKey;
-  // Page is remembered per filter set; changing the filters starts again at page 1
-  const filterKey = `${templeId}|${date}|${q}`;
-  const [pageState, setPageState] = useState({ key: null, page: 1 });
+  // The page lives in the URL (?page=N). Changing a filter or the search drops it, which means page 1.
+  const rawPage = Number.parseInt(searchParams.get("page") ?? "", 10);
+  const requestedPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+  const [direction, setDirection] = useState(1);
+  const listRef = useRef(null);
 
   // Realtime: patch only the matching slot in place. No refetch, and _id keys stay the same.
   useSlotUpdates(({ slotId, availableSeats, status }) => {
@@ -163,12 +177,21 @@ export default function Slots() {
   const slots = isCurrent && !response.failed ? response.slots : [];
   const failed = isCurrent && response.failed;
   const totalPages = Math.max(1, Math.ceil(slots.length / PAGE_SIZE));
-  const page = Math.min(pageState.key === filterKey ? pageState.page : 1, totalPages);
+  const page = Math.min(requestedPage, totalPages);
   const visibleSlots = slots.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const goToPage = (nextPage) => {
-    setPageState({ key: filterKey, page: nextPage });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setDirection(nextPage > page ? 1 : -1);
+    const params = new URLSearchParams(searchParams);
+    if (nextPage > 1) params.set("page", String(nextPage));
+    else params.delete("page");
+    setSearchParams(params);
+    // Scroll to the top of the slot list, below the topbar when it is fixed (it floats on public pages)
+    const topbar = document.querySelector(".topbar");
+    const offset = topbar && getComputedStyle(topbar).position === "fixed" ? topbar.offsetHeight : 0;
+    const top = (listRef.current?.getBoundingClientRect().top ?? 0) + window.scrollY - offset - SCROLL_GAP_PX;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: Math.max(0, top), behavior: reduceMotion ? "auto" : "smooth" });
   };
 
   let content;
@@ -219,24 +242,38 @@ export default function Slots() {
     );
   } else {
     content = (
-      <div className="slot-list slot-grid">
-        {visibleSlots.map((slot) => (
-          <SlotCard
-            key={slot._id}
-            slot={slot}
-            footer={
-              slot.status === "available" ? (
-                <Button onClick={() => navigate(`/book/${slot._id}`)}>Book now</Button>
-              ) : undefined
-            }
-          />
-        ))}
-      </div>
+      <AnimatePresence mode="wait" initial={false} custom={direction}>
+        <motion.div
+          key={page}
+          className="slot-list slot-grid"
+          custom={direction}
+          variants={pageVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={FAST}
+        >
+          {visibleSlots.map((slot, index) => (
+            <SlotCard
+              key={slot._id}
+              index={index}
+              slot={slot}
+              footer={
+                slot.status === "available" ? (
+                  <Button onClick={() => navigate(`/book/${slot._id}`)}>Book now</Button>
+                ) : undefined
+              }
+            />
+          ))}
+        </motion.div>
+      </AnimatePresence>
     );
   }
 
   return (
     <div className="public-shell">
+      <title>Darshan Slots | DarshanEase</title>
+      <meta name="description" content="Browse upcoming temple darshan slots by date and temple, check live seat availability and book your visit online with DarshanEase." />
       <Topbar />
       <main className="slots-main">
         <div className="slots-banner" role="img" aria-label="Temple banner" />
@@ -278,24 +315,9 @@ export default function Slots() {
             )}
           </p>
         </div>
-        {content}
-        {!loading && !failed && slots.length > PAGE_SIZE && (
-          <nav className="pagination" aria-label="Darshan slot pages">
-            <span>
-              {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, slots.length)} of {slots.length}
-            </span>
-            <div>
-              <button type="button" aria-label="Previous page" disabled={page === 1} onClick={() => goToPage(page - 1)}>
-                ‹
-              </button>
-              <span>
-                Page {page} of {totalPages}
-              </span>
-              <button type="button" aria-label="Next page" disabled={page === totalPages} onClick={() => goToPage(page + 1)}>
-                ›
-              </button>
-            </div>
-          </nav>
+        <div ref={listRef}>{content}</div>
+        {!loading && !failed && (
+          <Pagination page={page} totalPages={totalPages} total={slots.length} pageSize={PAGE_SIZE} onChange={goToPage} />
         )}
       </main>
       <Footer />

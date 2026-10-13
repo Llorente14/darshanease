@@ -1,7 +1,8 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import Button from "../components/Button";
 import Topbar from "../components/Topbar";
+import { useToast } from "../components/toastContext";
 
 function DashboardIcon() {
   return (
@@ -76,25 +77,28 @@ function todayLabel() {
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
 
   const firstName = (user?.name || "Devotee").trim().split(/\s+/)[0];
 
   const handleLogout = () => {
     logout();
+    toast.success("You have been logged out.");
     navigate("/login", { replace: true });
   };
 
   return (
     <div className="app-shell">
+      <title>Dashboard | DarshanEase</title>
       <Topbar />
       <aside className="sidebar">
         <span className="sidebar-label">Menu</span>
         <nav>
-          <button type="button" className="active">
+          <Link to="/dashboard" className="active" aria-current="page">
             <span className="nav-indicator" />
             <DashboardIcon />
             <span>Overview</span>
-          </button>
+          </Link>
         </nav>
         <span className="sidebar-spacer" />
       </aside>
@@ -164,10 +168,10 @@ export default function Dashboard() {
         </div>
       </main>
       <nav className="mobile-nav">
-        <button type="button" className="active">
+        <Link to="/dashboard" className="active" aria-current="page">
           <DashboardIcon />
           <span>Overview</span>
-        </button>
+        </Link>
       </nav>
     </div>
   );

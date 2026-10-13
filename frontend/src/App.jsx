@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
 import { useAuth } from "./context/useAuth";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -43,9 +44,29 @@ function RegisterRoute() {
   return token ? <Navigate to="/dashboard" replace /> : <Register />;
 }
 
+const PAGE_TRANSITION = { duration: 0.2, ease: [0.22, 1, 0.36, 1] };
+
+// Pages fade and slide 8px on a route change. Keyed by pathname, so a query-string change (filters, page) does not re-animate.
 function App() {
+  const location = useLocation();
   return (
-    <Routes>
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={PAGE_TRANSITION}
+      >
+        <AppRoutes location={location} />
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+function AppRoutes({ location }) {
+  return (
+    <Routes location={location}>
       <Route path="/" element={<IndexRedirect />} />
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/register" element={<RegisterRoute />} />

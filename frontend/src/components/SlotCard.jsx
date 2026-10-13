@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
+import { motion } from "motion/react";
 import {
   formatPrice,
   formatSeatsLeft,
   formatSlotDateParts,
   formatTimeRange,
 } from "../utils/format";
+import { cardEnter } from "../utils/motionPresets";
 
 // Badge text + tone per API status. Full and expired use neutral tones and a muted card,
 // so the state is shown by text and style, not color alone.
@@ -55,7 +57,7 @@ function ClockIcon() {
 // Pure presentational card: renders the slot it receives, holds no state and fetches nothing.
 // Keyed by slot._id by the parent, so a later seat update (USN-4) just swaps the slot object.
 // `footer` is an optional slot for a future action (booking in USN-5). Renders nothing when absent.
-export default function SlotCard({ slot, footer }) {
+export default function SlotCard({ slot, footer, index = 0 }) {
   const { label, tone } = STATUS[slot.status] ?? {
     label: slot.status,
     tone: "neutral",
@@ -64,7 +66,7 @@ export default function SlotCard({ slot, footer }) {
   const { weekday, day, month } = formatSlotDateParts(slot.date);
 
   return (
-    <article className={`slot-card${isMuted ? " is-muted" : ""}`}>
+    <motion.article className={`slot-card${isMuted ? " is-muted" : ""}`} {...cardEnter(index)}>
       <div className="slot-date">
         <span>{weekday}</span>
         <strong>{day}</strong>
@@ -74,7 +76,6 @@ export default function SlotCard({ slot, footer }) {
         <Link
           className="temple-link"
           to={`/temples/${slot.temple._id}`}
-          style={{ display: "block", width: "fit-content", textDecoration: "none" }}
         >
           {slot.temple.templeName}
         </Link>
@@ -99,6 +100,6 @@ export default function SlotCard({ slot, footer }) {
         <strong>{formatPrice(slot.price)}</strong>
       </div>
       {footer && <div className="slot-footer">{footer}</div>}
-    </article>
+    </motion.article>
   );
 }

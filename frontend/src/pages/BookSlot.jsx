@@ -6,6 +6,7 @@ import { useSlotUpdates } from "../hooks/useSlotUpdates";
 import Button from "../components/Button";
 import Footer from "../components/Footer";
 import Topbar from "../components/Topbar";
+import { useToast } from "../components/toastContext";
 import {
   formatPrice,
   formatSeatsLeft,
@@ -84,11 +85,11 @@ function SpinnerIcon() {
 export default function BookSlot() {
   const { slotId } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const [retryCount, setRetryCount] = useState(0);
   const [devotees, setDevotees] = useState(1);
   const [donationInput, setDonationInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
 
   // Same pattern as Slots: a response only counts when its key matches the current request
   const [request, setRequest] = useState({ key: null, slot: null, failure: null });
@@ -124,15 +125,15 @@ export default function BookSlot() {
   const handleConfirm = async () => {
     if (submitting) return;
     setSubmitting(true);
-    setSubmitError("");
     try {
       const result = await createBooking({ slotId, numberOfDevotees: count, donationAmount: donation });
       const { _id, status } = result.data.booking;
+      toast.success("Booking created.");
       // Pending bookings open the Snap popup on the confirmation page (?pay=1)
       navigate(status === "pending" ? `/bookings/${_id}?pay=1` : `/bookings/${_id}`, { replace: true });
     } catch (err) {
       // 409 not enough seats, 400 slot ended, etc. The form stays usable.
-      setSubmitError(err.response?.data?.message || "Booking failed. Please try again.");
+      toast.error(err);
     } finally {
       setSubmitting(false);
     }
@@ -314,7 +315,6 @@ export default function BookSlot() {
           {!canBook && !submitting && UNAVAILABLE_REASON[slot.status] && (
             <p className="summary-help">{UNAVAILABLE_REASON[slot.status]}</p>
           )}
-          {submitError && <p className="field-error">{submitError}</p>}
         </aside>
       </div>
     );
@@ -322,6 +322,7 @@ export default function BookSlot() {
 
   return (
     <div className="public-shell">
+      <title>Book Darshan | DarshanEase</title>
       <Topbar />
       <main className="slots-main">
         <button className="back-link" type="button" onClick={() => navigate("/slots")}>

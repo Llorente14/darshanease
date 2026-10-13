@@ -1,7 +1,11 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
 import { Logo } from "./Topbar";
 
+// Every item is a real route. The account column follows the session: guests see log in / register.
 export default function Footer() {
+  const { user } = useAuth();
+
   return (
     <footer>
       <div>
@@ -11,14 +15,22 @@ export default function Footer() {
       <div>
         <strong>Explore</strong>
         <Link to="/slots">Find darshan</Link>
-        <button type="button">How it works</button>
       </div>
       <div>
-        <strong>Support</strong>
-        <button type="button">Help centre</button>
-        <button type="button">Accessibility</button>
+        <strong>Account</strong>
+        {user ? (
+          <>
+            <Link to="/dashboard">Dashboard</Link>
+            <Link to="/bookings">My bookings</Link>
+          </>
+        ) : (
+          <>
+            <Link to="/login">Log in</Link>
+            <Link to="/register">Create account</Link>
+          </>
+        )}
       </div>
-      <p>© 2025 DarshanEase. Sample product experience.</p>
+      <p>© 2026 DarshanEase. All rights reserved.</p>
     </footer>
   );
 }

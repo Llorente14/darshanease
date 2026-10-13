@@ -1,3 +1,6 @@
+import { motion } from "motion/react";
+import { tap } from "../utils/motionPresets";
+
 export default function Button({
   children,
   variant = "primary",
@@ -11,8 +14,11 @@ export default function Button({
     .filter(Boolean)
     .join(" ");
 
+  const inactive = disabled || loading;
+
   return (
-    <button
+    <motion.button
+      {...(inactive ? {} : tap)}
       type={type}
       className={classes}
       disabled={disabled || loading}
@@ -35,6 +41,6 @@ export default function Button({
         </span>
       )}
       {children}
-    </button>
+    </motion.button>
   );
 }

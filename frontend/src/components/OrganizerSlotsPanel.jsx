@@ -6,7 +6,10 @@ import {
   getSlotBookings,
   updateMySlot,
 } from "../services/organizerService";
+import { AnimatePresence, motion } from "motion/react";
 import Button from "./Button";
+import { useToast } from "./toastContext";
+import { modalBackdrop, modalPanel } from "../utils/motionPresets";
 import { formatPrice, formatSlotDate, formatTimeRange } from "../utils/format";
 
 const EMPTY_FORM = {
@@ -162,9 +165,9 @@ function SlotField({ label, name, error, ...inputProps }) {
 }
 
 export default function OrganizerSlotsPanel({ temples }) {
+  const toast = useToast();
   const [filterTempleId, setFilterTempleId] = useState("");
   const [retryCount, setRetryCount] = useState(0);
-  const [notice, setNotice] = useState("");
 
   // Same pattern as MyBookings: a response only counts when its key matches the current request
   const [request, setRequest] = useState({ key: null, data: null, failed: false });
@@ -185,7 +188,6 @@ export default function OrganizerSlotsPanel({ temples }) {
   // One dialog at a time: { type: "delete" | "bookings", slot } or null
   const [dialog, setDialog] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [dialogError, setDialogError] = useState("");
   const [bookingsRetry, setBookingsRetry] = useState(0);
   const bookingsKey = dialog?.type === "bookings" ? `${dialog.slot._id}|${bookingsRetry}` : null;
   const [bookingsRequest, setBookingsRequest] = useState({ key: null, data: null, failed: false });
@@ -222,10 +224,7 @@ export default function OrganizerSlotsPanel({ temples }) {
   useEffect(() => {
     if (!dialog) return undefined;
     const onKeyDown = (event) => {
-      if (event.key === "Escape" && !deleting) {
-        setDialog(null);
-        setDialogError("");
-      }
+      if (event.key === "Escape" && !deleting) setDialog(null);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -242,7 +241,6 @@ export default function OrganizerSlotsPanel({ temples }) {
   };
 
   const startEdit = (slot) => {
-    setNotice("");
     setEditingSlot(slot);
     setForm(toForm(slot));
     setFieldErrors({});
@@ -256,30 +254,30 @@ export default function OrganizerSlotsPanel({ temples }) {
     setSaving(true);
     setFormError("");
     setFieldErrors({});
-    setNotice("");
     try {
       if (editingSlot) {
         // No templeId on update: a slot cannot move to another temple
         await updateMySlot(editingSlot._id, toSlotBody(form));
-        setNotice("Slot updated.");
+        toast.success("Slot updated.");
       } else {
         await createMySlot({ templeId: form.templeId, ...toSlotBody(form) });
-        setNotice("Slot created.");
+        toast.success("Slot created.");
       }
       resetForm();
       setRetryCount((count) => count + 1);
     } catch (err) {
+      // Field validation stays inline under the fields; any other API or network error goes to a toast
       const data = err.response?.data;
-      setFormError(data?.message || "Something went wrong. Please try again.");
-      setFieldErrors(mapFieldErrors(data?.errors));
+      const fields = mapFieldErrors(data?.errors);
+      setFieldErrors(fields);
+      if (Object.keys(fields).length > 0) setFormError(data?.message || "Please check the highlighted fields.");
+      else toast.error(err);
     } finally {
       setSaving(false);
     }
   };
 
   const openDialog = (next) => {
-    setNotice("");
-    setDialogError("");
     if (next.type === "bookings") setBookingsRetry(0);
     setDialog(next);
   };
@@ -287,22 +285,20 @@ export default function OrganizerSlotsPanel({ temples }) {
   const closeDialog = () => {
     if (deleting) return;
     setDialog(null);
-    setDialogError("");
   };
 
   const confirmDelete = async () => {
     setDeleting(true);
-    setDialogError("");
     try {
       const id = dialog.slot._id;
       await deleteMySlot(id);
       if (editingSlot?._id === id) resetForm();
       setDialog(null);
-      setNotice("Slot deleted.");
+      toast.success("Slot deleted.");
       setRetryCount((count) => count + 1);
     } catch (err) {
-      // 409 means the slot has bookings. The server message stays in the dialog.
-      setDialogError(err.response?.data?.message || "Something went wrong. Please try again.");
+      // 409 means the slot has bookings; the API message is shown in a toast
+      toast.error(err);
     } finally {
       setDeleting(false);
     }
@@ -501,12 +497,6 @@ export default function OrganizerSlotsPanel({ temples }) {
         </select>
       </label>
 
-      {notice && (
-        <div className="feedback success" role="status">
-          {notice}
-        </div>
-      )}
-
       <div className="organizer-layout">
         <div style={{ minWidth: 0 }}>{listBody}</div>
 
@@ -613,9 +603,11 @@ export default function OrganizerSlotsPanel({ temples }) {
         </section>
       </div>
 
+      <AnimatePresence>
       {dialog?.type === "delete" && (
-        <div className="modal-backdrop" onClick={closeDialog}>
-          <div
+        <motion.div className="modal-backdrop" onClick={closeDialog} {...modalBackdrop}>
+          <motion.div
+            {...modalPanel}
             className="modal"
             role="dialog"
             aria-modal="true"
@@ -634,11 +626,6 @@ export default function OrganizerSlotsPanel({ temples }) {
             <h2 id="slot-dialog-title">Delete this slot?</h2>
             <p>{slotLine(dialog.slot)}</p>
             <div className="modal-note">Slots with bookings cannot be deleted.</div>
-            {dialogError && (
-              <p className="field-error" role="alert">
-                {dialogError}
-              </p>
-            )}
             <div className="modal-actions">
               <Button variant="secondary" onClick={closeDialog} disabled={deleting}>
                 Keep slot
@@ -647,18 +634,20 @@ export default function OrganizerSlotsPanel({ temples }) {
                 Delete slot
               </Button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
+      <AnimatePresence>
       {dialog?.type === "bookings" && (
-        <div className="modal-backdrop" onClick={() => setDialog(null)}>
-          <div
-            className="modal"
+        <motion.div className="modal-backdrop" onClick={() => setDialog(null)} {...modalBackdrop}>
+          <motion.div
+            {...modalPanel}
+            className="modal modal-wide"
             role="dialog"
             aria-modal="true"
             aria-labelledby="slot-dialog-title"
-            style={{ width: "min(560px, 100%)" }}
             onClick={(event) => event.stopPropagation()}
           >
             <button
@@ -677,9 +666,10 @@ export default function OrganizerSlotsPanel({ temples }) {
                 Close
               </Button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </>
   );
 }
